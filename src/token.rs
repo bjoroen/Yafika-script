@@ -1,3 +1,5 @@
+
+#[derive(Debug)]
 pub enum TokenType {
     Identifier,
     Assign,
@@ -5,6 +7,7 @@ pub enum TokenType {
     String,
 }
 
+#[derive(Debug)]
 pub struct Token {
     token_type: TokenType,
     literal: String,
