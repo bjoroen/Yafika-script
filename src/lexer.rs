@@ -26,9 +26,7 @@ impl Lexer {
     pub fn read(&mut self) {
         if self.next >= self.source.len() {
             self.char = '\0'
-        } else if self.char == '\n' {
-            self.char = ' '
-        } else {
+       } else {
             self.char = self.source[self.next]
         }
 
