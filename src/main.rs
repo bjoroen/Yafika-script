@@ -16,12 +16,12 @@ fn main() {
     let maybe_source_code = fs::read_to_string(file);
 
     let source_code = if maybe_source_code.is_ok() {
-        maybe_source_code.unwrap()
+        maybe_source_code
     } else {
         panic!("File is empty? why would you give me an empty file")
     };
 
-    let mut lexer = Lexer::new(source_code);
+    let lexer = Lexer::new(source_code.unwrap());
 
     for t in lexer {
         print!("{:?}", t)

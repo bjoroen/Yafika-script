@@ -1,6 +1,4 @@
-
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum TokenType {
     Identifier,
     Assign,
@@ -8,14 +6,13 @@ pub enum TokenType {
     String,
     If,
     Number,
+    Addition,
 }
 
-
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct Token {
-    token_type: TokenType,
-    literal: String,
+    pub token_type: TokenType,
+    pub literal: String,
 }
 
 impl Token {

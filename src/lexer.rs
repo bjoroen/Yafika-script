@@ -26,6 +26,8 @@ impl Lexer {
     pub fn read(&mut self) {
         if self.next >= self.source.len() {
             self.char = '\0'
+        } else if self.char == '\n' {
+            self.char = ' '
         } else {
             self.char = self.source[self.next]
         }
@@ -49,11 +51,17 @@ impl Iterator for Lexer {
             return None;
         }
 
+        self.skip_whitespace();
+
         let token: Token = match self.char {
             // Assigne Token
             '=' => {
                 self.read();
                 Token::new(TokenType::Assign, "=".to_owned())
+            }
+            '+' => {
+                self.read();
+                Token::new(TokenType::Addition, "+".to_owned())
             }
             // String Token
             '\"' | '\'' => {
@@ -114,7 +122,10 @@ impl Iterator for Lexer {
 
                 Token::new(token_type, buffer)
             }
-            _ => unimplemented!(),
+            _ => {
+                println!("{}", self.char);
+                unimplemented!()
+            }
         };
 
         self.read();
@@ -127,68 +138,55 @@ mod tests {
     use super::*;
 
     #[test]
-    fn let_lexer() {
-        let lexer = Lexer::new(String::from("let"));
+    fn lexer_test() {
+        let lexer = Lexer::new(String::from(
+            "let x = 123
+        let y = \"hello world\"
+        let number = 420 + 69",
+        ));
+        let mut array_of_tokens: Vec<Token> = Vec::new();
 
         for t in lexer {
-            assert_eq!(t, Token::new(TokenType::Let, "let".to_string()));
-        }
-    }
-
-    #[test]
-    fn identifier_lexer() {
-        let lexer = Lexer::new(String::from("Yafika"));
-
-        for t in lexer {
-            assert_eq!(t, Token::new(TokenType::Identifier, "Yafika".to_string()));
-        }
-    }
-
-    #[test]
-    fn assigne_lexer() {
-        let lexer = Lexer::new(String::from("="));
-
-        for t in lexer {
-            assert_eq!(t, Token::new(TokenType::Assign, "=".to_string()));
-        }
-    }
-
-    #[test]
-    fn string_lexer() {
-        let lexer = Lexer::new(String::from("\"Nandi\""));
-        let single_qoute_lexer = Lexer::new(String::from("\'IsCute\'"));
-
-        for t in lexer {
-            assert_eq!(t, Token::new(TokenType::String, "Nandi".to_string()));
+            println!("{:?}", t);
+            array_of_tokens.push(t);
         }
 
-        for t in single_qoute_lexer {
-            assert_eq!(t, Token::new(TokenType::String, "IsCute".to_string()));
-        }
-    }
-    #[test]
-
-    fn number_lexer() {
-        let lexer = Lexer::new(String::from("12312"));
-
-        for t in lexer {
-            assert_eq!(t, Token::new(TokenType::Number, "12312".to_string()));
-        }
-    }
-    #[test]
-    fn number_with_dot_lexer() {
-        let lexer = Lexer::new(String::from("1231.2"));
-
-        for t in lexer {
-            assert_eq!(t, Token::new(TokenType::Number, "1231.2".to_string()));
-        }
-    }
-    #[test]
-    fn number_with_underscore_lexer() {
-        let lexer = Lexer::new(String::from("100_000"));
-
-        for t in lexer {
-            assert_eq!(t, Token::new(TokenType::Number, "100000".to_string()));
-        }
+        assert_eq!(array_of_tokens.len(), 14);
+        assert_eq!(
+            array_of_tokens[0],
+            Token::new(TokenType::Let, "let".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[1],
+            Token::new(TokenType::Identifier, "x".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[2],
+            Token::new(TokenType::Assign, "=".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[3],
+            Token::new(TokenType::Number, "123".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[4],
+            Token::new(TokenType::Let, "let".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[5],
+            Token::new(TokenType::Identifier, "y".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[6],
+            Token::new(TokenType::Assign, "=".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[7],
+            Token::new(TokenType::String, "hello world".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[12],
+            Token::new(TokenType::Addition, "+".to_string())
+        );
     }
 }
