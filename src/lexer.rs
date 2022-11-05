@@ -26,7 +26,7 @@ impl Lexer {
     pub fn read(&mut self) {
         if self.next >= self.source.len() {
             self.char = '\0'
-       } else {
+        } else {
             self.char = self.source[self.next]
         }
 
@@ -60,6 +60,10 @@ impl Iterator for Lexer {
             '+' => {
                 self.read();
                 Token::new(TokenType::Addition, "+".to_owned())
+            }
+            '-' => {
+                self.read();
+                Token::new(TokenType::Minus, "-".to_owned())
             }
             // String Token
             '\"' | '\'' => {
@@ -140,8 +144,9 @@ mod tests {
         let lexer = Lexer::new(String::from(
             "let x = 123
         let y = \"hello world\"
-        let number = 420 + 69",
+        let number = 420 + 69 - 1",
         ));
+
         let mut array_of_tokens: Vec<Token> = Vec::new();
 
         for t in lexer {
@@ -149,7 +154,7 @@ mod tests {
             array_of_tokens.push(t);
         }
 
-        assert_eq!(array_of_tokens.len(), 14);
+        assert_eq!(array_of_tokens.len(), 15);
         assert_eq!(
             array_of_tokens[0],
             Token::new(TokenType::Let, "let".to_string())
@@ -185,6 +190,14 @@ mod tests {
         assert_eq!(
             array_of_tokens[12],
             Token::new(TokenType::Addition, "+".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[13],
+            Token::new(TokenType::Number, "69".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[14],
+            Token::new(TokenType::Minus, "-".to_string())
         );
     }
 }

@@ -7,6 +7,8 @@ pub enum TokenType {
     If,
     Number,
     Addition,
+    Minus,
+    
 }
 
 #[derive(PartialEq, Debug)]
