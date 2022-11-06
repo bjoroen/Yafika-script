@@ -36,7 +36,10 @@ impl Parser {
                     self.lexer.next();
                     let expression = self.parse_expression();
 
-                    statements.push(Statement::Let { name: identifier.literal, initial_value: expression })
+                    statements.push(Statement::Let {
+                        name: identifier.literal,
+                        initial_value: expression,
+                    })
                 }
                 _ => unimplemented!(),
             }
@@ -70,9 +73,7 @@ mod tests {
         let mut parser = Parser::new(lexer);
         let prog = parser.parse();
 
-        let mut expected_prog: Program = Vec::new();
-
-        expected_prog.push(Statement::Let { name: "hello".to_string(), initial_value: (Expression::Number(123.0)) });
+        let expected_prog: Program = Vec::from([Statement::Let { name: "hello".to_string(), initial_value: (Expression::Number(123.0))}]);
 
         assert_eq!(prog, expected_prog);
     }
