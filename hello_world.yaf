@@ -1,4 +1,1 @@
-
-let x = 123
-let y = "hello world"
-let minus = 2 - 2
+let x = 100_00.004

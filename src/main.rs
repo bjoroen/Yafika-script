@@ -2,7 +2,9 @@ use crate::lexer::Lexer;
 use std::env;
 use std::fs;
 
+mod ast;
 mod lexer;
+mod parser;
 mod token;
 
 fn main() {
@@ -23,9 +25,11 @@ fn main() {
 
     let lexer = Lexer::new(source_code.unwrap());
 
-    for t in lexer {
-        print!("{:?}", t)
-    }
+    let mut parser = parser::Parser::new(lexer);
+
+    let prog = parser.parse();
+
+    println!("{:?}", prog)
 
     // Need refactor, problem
 }
