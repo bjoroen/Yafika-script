@@ -66,8 +66,55 @@ impl Lexer {
         match self.char {
             // Single Character Tokens
             '=' => {
+                let mut buffer: String = String::new();
+                buffer.push(self.char);
                 self.read();
-                Token::new(TokenType::Assign, "=".to_owned())
+
+                while !self.char.is_whitespace() {
+                    buffer.push(self.char);
+                    self.read();
+                }
+                let token_type: TokenType = match buffer.as_str() {
+                    "=" => TokenType::Assign,
+                    "==" => TokenType::EqualEqual,
+                    _ => unimplemented!(),
+                };
+
+                Token::new(token_type, buffer)
+            }
+            '<' => {
+                let mut buffer: String = String::new();
+                buffer.push(self.char);
+                self.read();
+
+                while !self.char.is_whitespace() {
+                    buffer.push(self.char);
+                    self.read();
+                }
+                let token_type: TokenType = match buffer.as_str() {
+                    "<" => TokenType::Greater,
+                    "<=" => TokenType::GreaterEqual,
+                    _ => unimplemented!(),
+                };
+
+                Token::new(token_type, buffer)
+            }
+            '>' => {
+                let mut buffer: String = String::new();
+                buffer.push(self.char);
+                self.read();
+
+                while !self.char.is_whitespace() {
+                    buffer.push(self.char);
+                    self.read();
+                }
+                let token_type: TokenType = match buffer.as_str() {
+                    ">" => TokenType::Less,
+                    ">=" => TokenType::LessEqual,
+                    _ => unimplemented!(),
+                };
+
+                Token::new(token_type, buffer)
             }
             '+' => {
                 self.read();
@@ -76,6 +123,39 @@ impl Lexer {
             '-' => {
                 self.read();
                 Token::new(TokenType::Minus, "-".to_owned())
+            }
+            '*' => {
+                self.read();
+                Token::new(TokenType::Star, "*".to_owned())
+            }
+            '/' => {
+                self.read();
+                Token::new(TokenType::Division, "|".to_owned())
+            }
+            '!' => {
+                let mut buffer: String = String::new();
+                buffer.push(self.char);
+                self.read();
+
+                while !self.char.is_whitespace() {
+                    buffer.push(self.char);
+                    self.read();
+                }
+                let token_type: TokenType = match buffer.as_str() {
+                    "!" => TokenType::Bang,
+                    "!=" => TokenType::BangEqual,
+                    _ => unimplemented!(),
+                };
+
+                Token::new(token_type, buffer)
+            }
+            '(' => {
+                self.read();
+                Token::new(TokenType::LeftParen, "(".to_owned())
+            }
+            ')' => {
+                self.read();
+                Token::new(TokenType::RightParen, ")".to_owned())
             }
             // String Token
             '\"' | '\'' => {
@@ -131,6 +211,9 @@ impl Lexer {
                 let token_type: TokenType = match buffer.as_str() {
                     "let" => TokenType::Let,
                     "if" => TokenType::If,
+                    "True" => TokenType::Bool,
+                    "False" => TokenType::Bool,
+                    "nil" => TokenType::Nil,
                     _ => TokenType::Identifier,
                 };
 
@@ -167,7 +250,8 @@ mod tests {
         let lexer = Lexer::new(String::from(
             "let x = 123
         let y = \"hello world\"
-        let number = 420 + 69 - 1",
+        let number = 420 + 69 - 1
+        nil True False ! != ( ) == >= <= *",
         ));
 
         let mut array_of_tokens: Vec<Token> = Vec::new();
@@ -177,7 +261,7 @@ mod tests {
             array_of_tokens.push(t);
         }
 
-        assert_eq!(array_of_tokens.len(), 16);
+        assert_eq!(array_of_tokens.len(), 27);
         assert_eq!(
             array_of_tokens[0],
             Token::new(TokenType::Let, "let".to_string())
@@ -221,6 +305,54 @@ mod tests {
         assert_eq!(
             array_of_tokens[14],
             Token::new(TokenType::Minus, "-".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[15],
+            Token::new(TokenType::Number, "1".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[16],
+            Token::new(TokenType::Nil, "nil".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[17],
+            Token::new(TokenType::Bool, "True".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[18],
+            Token::new(TokenType::Bool, "False".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[19],
+            Token::new(TokenType::Bang, "!".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[20],
+            Token::new(TokenType::BangEqual, "!=".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[21],
+            Token::new(TokenType::LeftParen, "(".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[22],
+            Token::new(TokenType::RightParen, ")".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[23],
+            Token::new(TokenType::EqualEqual, "==".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[24],
+            Token::new(TokenType::LessEqual, ">=".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[25],
+            Token::new(TokenType::GreaterEqual, "<=".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[26],
+            Token::new(TokenType::Star, "*".to_string())
         );
     }
 }

@@ -30,6 +30,7 @@ impl Parser {
                             ..
                         })
                     ) {
+                        println!("{:?}", self.lexer.peek());
                         panic!("Expected equal for assignment")
                     }
 
@@ -73,7 +74,10 @@ mod tests {
         let mut parser = Parser::new(lexer);
         let prog = parser.parse();
 
-        let expected_prog: Program = Vec::from([Statement::Let { name: "hello".to_string(), initial_value: (Expression::Number(123.0))}]);
+        let expected_prog: Program = Vec::from([Statement::Let {
+            name: "hello".to_string(),
+            initial_value: (Expression::Number(123.0)),
+        }]);
 
         assert_eq!(prog, expected_prog);
     }

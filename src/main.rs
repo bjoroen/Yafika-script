@@ -25,11 +25,11 @@ fn main() {
 
     let lexer = Lexer::new(source_code.unwrap());
 
+    //let x = lexer.next();
+
     let mut parser = parser::Parser::new(lexer);
 
     let prog = parser.parse();
 
     println!("{:?}", prog)
-
-    // Need refactor, problem
 }

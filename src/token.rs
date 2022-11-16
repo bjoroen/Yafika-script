@@ -8,7 +8,20 @@ pub enum TokenType {
     Number,
     Addition,
     Minus,
-    
+    //Not implemented
+    Nil,
+    Bool,
+    Bang,
+    BangEqual,
+    EqualEqual,
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
+    LeftParen,
+    RightParen,
+    Star,
+    Division,
 }
 
 #[derive(PartialEq, Debug)]
