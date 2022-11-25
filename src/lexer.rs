@@ -2,7 +2,7 @@ use crate::token::{Token, TokenType};
 
 #[derive(Debug)]
 pub struct Lexer {
-    tokens: Vec<Token>,
+    pub tokens: Vec<Token>,
     source: Vec<char>,
     current: usize,
     next: usize,
@@ -82,6 +82,10 @@ impl Lexer {
 
                 Token::new(token_type, buffer)
             }
+            ',' => {
+                self.read();
+                Token::new(TokenType::Comma, ",".to_owned())
+            }
             '<' => {
                 let mut buffer: String = String::new();
                 buffer.push(self.char);
@@ -130,7 +134,7 @@ impl Lexer {
             }
             '/' => {
                 self.read();
-                Token::new(TokenType::Division, "|".to_owned())
+                Token::new(TokenType::Division, "/".to_owned())
             }
             '!' => {
                 let mut buffer: String = String::new();
@@ -156,6 +160,14 @@ impl Lexer {
             ')' => {
                 self.read();
                 Token::new(TokenType::RightParen, ")".to_owned())
+            }
+            '{' => {
+                self.read();
+                Token::new(TokenType::LeftBrace, "{".to_owned())
+            }
+            '}' => {
+                self.read();
+                Token::new(TokenType::RightBrace, "}".to_owned())
             }
             // String Token
             '\"' | '\'' => {
@@ -214,6 +226,9 @@ impl Lexer {
                     "True" => TokenType::Bool,
                     "False" => TokenType::Bool,
                     "nil" => TokenType::Nil,
+                    "fn" => TokenType::Fn,
+                    "else" => TokenType::Else,
+                    "return" => TokenType::Return,
                     _ => TokenType::Identifier,
                 };
 
@@ -251,7 +266,13 @@ mod tests {
             "let x = 123
         let y = \"hello world\"
         let number = 420 + 69 - 1
-        nil True False ! != ( ) == >= <= *",
+        nil True False ! != ( ) == >= <= * ,
+        call(a,b)
+        if(5 < 10) {
+            return True
+        } else {
+            return False
+        }",
         ));
 
         let mut array_of_tokens: Vec<Token> = Vec::new();
@@ -261,7 +282,7 @@ mod tests {
             array_of_tokens.push(t);
         }
 
-        assert_eq!(array_of_tokens.len(), 27);
+        assert_eq!(array_of_tokens.len(), 49);
         assert_eq!(
             array_of_tokens[0],
             Token::new(TokenType::Let, "let".to_string())
@@ -353,6 +374,10 @@ mod tests {
         assert_eq!(
             array_of_tokens[26],
             Token::new(TokenType::Star, "*".to_string())
+        );
+        assert_eq!(
+            array_of_tokens[27],
+            Token::new(TokenType::Comma, ",".to_string())
         );
     }
 }

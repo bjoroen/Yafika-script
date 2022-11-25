@@ -1,16 +1,25 @@
 #[derive(PartialEq, Debug)]
 pub enum TokenType {
-    Identifier,
-    Assign,
-    Let,
-    String,
+    // KeyWords
     If,
+    Let,
+    Fn,
+    Else,
+    Return,
+
+    // Identifiers + litterals
+    Identifier,
     Number,
-    Addition,
-    Minus,
-    //Not implemented
+    String,
     Nil,
     Bool,
+
+    // Operators
+    Assign,
+    Addition,
+    Minus,
+    Star,
+    Division,
     Bang,
     BangEqual,
     EqualEqual,
@@ -18,10 +27,13 @@ pub enum TokenType {
     GreaterEqual,
     Less,
     LessEqual,
+
+    // Delimiters
+    Comma,
     LeftParen,
     RightParen,
-    Star,
-    Division,
+    RightBrace,
+    LeftBrace,
 }
 
 #[derive(PartialEq, Debug)]
