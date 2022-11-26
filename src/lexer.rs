@@ -49,8 +49,6 @@ impl Lexer {
         let old_next = self.next;
         let old_char = self.char;
 
-        self.char = self.source[self.next];
-
         let token = self.match_token();
 
         self.current = old_current;
@@ -60,7 +58,7 @@ impl Lexer {
         Some(token)
     }
 
-    fn match_token(&mut self) -> Token {
+    pub fn match_token(&mut self) -> Token {
         self.skip_whitespace();
 
         match self.char {

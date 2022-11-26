@@ -1,4 +1,4 @@
-use crate::ast::{Expression, Statement};
+use crate::ast::{Expression, Program, Statement};
 use crate::lexer::Lexer;
 use crate::token::{Token, TokenType};
 
@@ -11,16 +11,16 @@ impl Parser {
         Self { lexer }
     }
 
-    pub fn parse(&mut self) -> Program {
-        let mut statements = Vec::<Statement>::new();
+    pub fn parser(&mut self) -> Program {
+        let mut statements: Vec<Statement> = Vec::new();
 
         while let Some(token) = self.lexer.next() {
             match token.token_type {
                 TokenType::Let => {
-                    let identifier = if let Some(identifer) = self.lexer.next() {
-                        identifer
+                    let identifier = if let Some(identifier) = self.lexer.next() {
+                        identifier
                     } else {
-                        panic!("Expected Identifier")
+                        panic!("Expected identifier")
                     };
 
                     if !matches!(
@@ -31,15 +31,16 @@ impl Parser {
                         })
                     ) {
                         println!("{:?}", self.lexer.peek());
-                        panic!("Expected equal for assignment")
+                        panic!("Expected Equal for assigment")
                     }
 
                     self.lexer.next();
+
                     let expression = self.parse_expression();
 
                     statements.push(Statement::Let {
                         name: identifier.literal,
-                        initial_value: expression,
+                        value: expression,
                     })
                 }
                 _ => unimplemented!(),
@@ -60,11 +61,12 @@ impl Parser {
     }
 }
 
-pub type Program = Vec<Statement>;
-
 #[cfg(test)]
 mod tests {
-    use crate::lexer;
+    use crate::{
+        ast::{self, Expression},
+        lexer,
+    };
 
     use super::*;
 
@@ -72,11 +74,11 @@ mod tests {
     fn parser_test() {
         let lexer = lexer::Lexer::new(String::from("let hello = 123"));
         let mut parser = Parser::new(lexer);
-        let prog = parser.parse();
+        let prog = parser.parser();
 
-        let expected_prog: Program = Vec::from([Statement::Let {
+        let expected_prog: ast::Program = Vec::from([Statement::Let {
             name: "hello".to_string(),
-            initial_value: (Expression::Number(123.0)),
+            value: (Expression::Number(123.0)),
         }]);
 
         assert_eq!(prog, expected_prog);

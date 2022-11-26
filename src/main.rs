@@ -1,3 +1,5 @@
+use parser::Parser;
+
 use crate::lexer::Lexer;
 use std::env;
 use std::fs;
@@ -24,15 +26,9 @@ fn main() {
             panic!("File is empty? why would you give me an empty file")
         };
 
-        let lexer = Lexer::new(source_code.unwrap());
-
-        //let x = lexer.next();
-
-        let mut parser = parser::Parser::new(lexer);
-
-        let prog = parser.parse();
-
-        println!("{:?}", prog)
+        let mut lexer = Lexer::new(source_code.unwrap());
+        let mut pars = Parser::new(lexer);
+        pars.parser();
     }
 
     if (env::args().len() == 1) {

@@ -34,6 +34,9 @@ pub enum TokenType {
     RightParen,
     RightBrace,
     LeftBrace,
+
+    // END OF FILE
+    EOF,
 }
 
 #[derive(PartialEq, Debug)]
