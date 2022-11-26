@@ -4,7 +4,7 @@ use crate::token::{Token, TokenType};
 pub struct Lexer {
     pub tokens: Vec<Token>,
     source: Vec<char>,
-    current: usize,
+    pub current: usize,
     next: usize,
     char: char,
 }

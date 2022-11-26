@@ -43,6 +43,11 @@ impl Parser {
                         value: expression,
                     })
                 }
+                TokenType::Return => {
+                    let expression = self.parse_expression();
+                    println!("{:?}", expression);
+                    statements.push(Statement::Return { value: expression });
+                }
                 _ => unimplemented!(),
             }
         }
@@ -89,10 +94,9 @@ mod tests {
     fn parse_return_test() {
         let lexer = lexer::Lexer::new(String::from(
             "
-                                                   return 123
-                                                   return 10
-                                                   return 02031203
-                                                   ",
+                return 123
+                return 10
+                return 92031203",
         ));
         let mut parser = Parser::new(lexer);
         let prog = parser.parser();
@@ -105,7 +109,7 @@ mod tests {
                 value: (Expression::Number(10.0)),
             },
             Statement::Return {
-                value: (Expression::Number(02031203.0)),
+                value: (Expression::Number(92031203.0)),
             },
         ]);
 
