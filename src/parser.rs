@@ -108,5 +108,7 @@ mod tests {
                 value: (Expression::Number(02031203.0)),
             },
         ]);
+
+        assert_eq!(prog, expected_prog)
     }
 }
