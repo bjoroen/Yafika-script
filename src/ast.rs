@@ -9,6 +9,7 @@ pub struct Node {
 pub enum Statement {
     Let { name: String, value: Expression },
     Return { value: Expression },
+    StatmentExpression { value: Expression },
 }
 
 #[derive(PartialEq, Debug)]
