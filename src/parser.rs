@@ -63,6 +63,7 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
+
     use crate::{
         ast::{self, Expression},
         lexer,
@@ -71,7 +72,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parser_test() {
+    fn parser_let_test() {
         let lexer = lexer::Lexer::new(String::from("let hello = 123"));
         let mut parser = Parser::new(lexer);
         let prog = parser.parser();
@@ -82,5 +83,30 @@ mod tests {
         }]);
 
         assert_eq!(prog, expected_prog);
+    }
+
+    #[test]
+    fn parse_return_test() {
+        let lexer = lexer::Lexer::new(String::from(
+            "
+                                                   return 123
+                                                   return 10
+                                                   return 02031203
+                                                   ",
+        ));
+        let mut parser = Parser::new(lexer);
+        let prog = parser.parser();
+
+        let expected_prog: ast::Program = Vec::from([
+            Statement::Return {
+                value: (Expression::Number(123.0)),
+            },
+            Statement::Return {
+                value: (Expression::Number(10.0)),
+            },
+            Statement::Return {
+                value: (Expression::Number(02031203.0)),
+            },
+        ]);
     }
 }
