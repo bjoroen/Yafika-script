@@ -17,4 +17,16 @@ pub enum Expression {
     Number(f64),
 }
 
+#[derive(PartialEq, PartialOrd, Debug, Clone)]
+pub enum Precedence {
+    Lowest,
+    Equals,
+    LessGreater,
+    Sum,
+    Product,
+    Prefix,
+    Call,
+    Indexj,
+}
+
 pub type Program = Vec<Statement>;

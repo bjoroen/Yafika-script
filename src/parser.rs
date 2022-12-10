@@ -64,6 +64,14 @@ impl Parser {
             _ => unimplemented!(),
         }
     }
+
+    pub fn prefix_parser_function() -> Expression {
+        todo!()
+    }
+
+    pub fn infix_parser_function(Expr: Expression) -> Expression {
+        todo!()
+    }
 }
 
 #[cfg(test)]
