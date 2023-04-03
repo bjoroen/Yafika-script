@@ -35,7 +35,6 @@ impl Parser {
                     }
 
                     self.lexer.next();
-
                     let expression = self.parse_expression();
 
                     statements.push(Statement::Let {
@@ -45,13 +44,17 @@ impl Parser {
                 }
                 TokenType::Return => {
                     let expression = self.parse_expression();
-                    println!("{:?}", expression);
                     statements.push(Statement::Return { value: expression });
                 }
-                _ => unimplemented!(),
+                _ => {
+                    let expression = self.parse_expression();
+                    dbg!(&expression);
+                    statements.push(Statement::StatmentExpression { value: expression })
+                }
             }
         }
 
+        dbg!(&statements);
         statements
     }
 
@@ -61,12 +64,26 @@ impl Parser {
                 token_type: TokenType::Number,
                 literal,
             }) => Expression::Number(literal.parse().unwrap()),
+            Some(Token {
+                token_type: TokenType::Minus,
+                literal,
+            })
+            | Some(Token {
+                token_type: TokenType::Bang,
+                literal,
+            }) => self.prefix_parser_function(Token {
+                token_type,
+                literal,
+            }),
             _ => unimplemented!(),
         }
     }
 
-    pub fn prefix_parser_function() -> Expression {
-        todo!()
+    pub fn prefix_parser_function(&mut self, token: Token) -> Expression {
+        Expression::PrefixExpression {
+            Token: Token::new(TokenType::Minus, "-".to_string()),
+            Right: Box::new(self.parse_expression()),
+        }
     }
 
     pub fn infix_parser_function(Expr: Expression) -> Expression {
@@ -85,17 +102,36 @@ mod tests {
     use super::*;
 
     #[test]
+    fn parse_prefix_expression() {
+        let lexer = lexer::Lexer::new(String::from("-5"));
+        let mut parser = Parser::new(lexer);
+        let program = parser.parser();
+
+        let expected_program: ast::Program = Vec::from([Statement::StatmentExpression {
+            value: Expression::PrefixExpression {
+                Token: Token {
+                    token_type: TokenType::Minus,
+                    literal: "-".to_string(),
+                },
+                Right: Box::new(Expression::Number(5.0)),
+            },
+        }]);
+
+        assert_eq!(program, expected_program);
+    }
+
+    #[test]
     fn parser_let_test() {
         let lexer = lexer::Lexer::new(String::from("let hello = 123"));
         let mut parser = Parser::new(lexer);
-        let prog = parser.parser();
+        let program = parser.parser();
 
-        let expected_prog: ast::Program = Vec::from([Statement::Let {
+        let expected_program: ast::Program = Vec::from([Statement::Let {
             name: "hello".to_string(),
             value: (Expression::Number(123.0)),
         }]);
 
-        assert_eq!(prog, expected_prog);
+        assert_eq!(program, expected_program);
     }
 
     #[test]
@@ -107,9 +143,9 @@ mod tests {
                 return 92031203",
         ));
         let mut parser = Parser::new(lexer);
-        let prog = parser.parser();
+        let program = parser.parser();
 
-        let expected_prog: ast::Program = Vec::from([
+        let expected_program: ast::Program = Vec::from([
             Statement::Return {
                 value: (Expression::Number(123.0)),
             },
@@ -121,6 +157,6 @@ mod tests {
             },
         ]);
 
-        assert_eq!(prog, expected_prog)
+        assert_eq!(program, expected_program)
     }
 }

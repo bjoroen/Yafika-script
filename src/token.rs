@@ -1,4 +1,4 @@
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub enum TokenType {
     // KeyWords
     If,
@@ -39,7 +39,7 @@ pub enum TokenType {
     EOF,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub struct Token {
     pub token_type: TokenType,
     pub literal: String,

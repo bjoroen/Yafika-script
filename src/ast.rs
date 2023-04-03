@@ -1,4 +1,4 @@
-use crate::token::Token;
+use crate::token::{Token, TokenType};
 
 #[derive(PartialEq, Debug)]
 pub struct Node {
@@ -12,21 +12,31 @@ pub enum Statement {
     StatmentExpression { value: Expression },
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub enum Expression {
     Number(f64),
+    PrefixExpression {
+        Token: Token,
+        Right: Box<Expression>,
+    },
 }
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
 pub enum Precedence {
-    Lowest,
-    Equals,
-    LessGreater,
-    Sum,
-    Product,
-    Prefix,
-    Call,
-    Indexj,
+    Lowest = 0,
+    Equals = 1,
+    LessGreater = 2,
+    Sum = 3,
+    Product = 4,
+    Prefix = 5,
+    Call = 6,
 }
+//
+// #[derive(PartialEq, PartialOrd, Debug, Clone)]
+// pub struct PrefixExpression {
+//     pub Token: TokenType,
+//     pub Operator: String,
+//     pub Right: Expression,
+// }
 
 pub type Program = Vec<Statement>;
