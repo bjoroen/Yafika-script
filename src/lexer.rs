@@ -139,7 +139,7 @@ impl Lexer {
                 buffer.push(self.char);
                 self.read();
 
-                while !self.char.is_whitespace() {
+                while !self.char.is_whitespace() && !self.char.is_alphanumeric() {
                     buffer.push(self.char);
                     self.read();
                 }

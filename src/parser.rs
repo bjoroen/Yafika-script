@@ -32,10 +32,12 @@ impl Parser {
                     ) {
                         println!("{:?}", self.lexer.peek());
                         panic!("Expected Equal for assigment")
+                    } else {
+                        self.lexer.next();
                     }
 
-                    self.lexer.next();
-                    let expression = self.parse_expression();
+                    let next_token = self.lexer.next();
+                    let expression = self.parse_expression(next_token);
 
                     statements.push(Statement::Let {
                         name: identifier.literal,
@@ -43,12 +45,12 @@ impl Parser {
                     })
                 }
                 TokenType::Return => {
-                    let expression = self.parse_expression();
+                    let next_token = self.lexer.next();
+                    let expression = self.parse_expression(next_token);
                     statements.push(Statement::Return { value: expression });
                 }
                 _ => {
-                    let expression = self.parse_expression();
-                    dbg!(&expression);
+                    let expression = self.parse_expression(Some(token));
                     statements.push(Statement::StatmentExpression { value: expression })
                 }
             }
@@ -58,31 +60,31 @@ impl Parser {
         statements
     }
 
-    pub fn parse_expression(&mut self) -> Expression {
-        match self.lexer.next() {
-            Some(Token {
-                token_type: TokenType::Number,
-                literal,
-            }) => Expression::Number(literal.parse().unwrap()),
-            Some(Token {
-                token_type: TokenType::Minus,
-                literal,
-            })
-            | Some(Token {
-                token_type: TokenType::Bang,
-                literal,
-            }) => self.prefix_parser_function(Token {
-                token_type,
-                literal,
-            }),
-            _ => unimplemented!(),
+    pub fn parse_expression(&mut self, token: Option<Token>) -> Expression {
+        dbg!(&token);
+        match token {
+            Some(t) => match t {
+                Token {
+                    token_type,
+                    literal,
+                } => match token_type {
+                    TokenType::Number => Expression::Number(literal.parse().unwrap()),
+                    TokenType::Minus | TokenType::Bang => {
+                        self.prefix_parser_function(token_type, literal)
+                    }
+                    _ => unimplemented!(),
+                },
+            },
+
+            None => unimplemented!(),
         }
     }
 
-    pub fn prefix_parser_function(&mut self, token: Token) -> Expression {
+    pub fn prefix_parser_function(&mut self, token_type: TokenType, literal: String) -> Expression {
+        let next_token = self.lexer.next();
         Expression::PrefixExpression {
-            Token: Token::new(TokenType::Minus, "-".to_string()),
-            Right: Box::new(self.parse_expression()),
+            Token: Token::new(token_type, literal),
+            Right: Box::new(self.parse_expression(next_token)),
         }
     }
 
@@ -103,19 +105,30 @@ mod tests {
 
     #[test]
     fn parse_prefix_expression() {
-        let lexer = lexer::Lexer::new(String::from("-5"));
+        let lexer = lexer::Lexer::new(String::from("-123 !124"));
         let mut parser = Parser::new(lexer);
         let program = parser.parser();
 
-        let expected_program: ast::Program = Vec::from([Statement::StatmentExpression {
-            value: Expression::PrefixExpression {
-                Token: Token {
-                    token_type: TokenType::Minus,
-                    literal: "-".to_string(),
+        let expected_program: ast::Program = Vec::from([
+            Statement::StatmentExpression {
+                value: Expression::PrefixExpression {
+                    Token: Token {
+                        token_type: TokenType::Minus,
+                        literal: "-".to_string(),
+                    },
+                    Right: Box::new(Expression::Number(123.0)),
                 },
-                Right: Box::new(Expression::Number(5.0)),
             },
-        }]);
+            Statement::StatmentExpression {
+                value: Expression::PrefixExpression {
+                    Token: Token {
+                        token_type: TokenType::Bang,
+                        literal: "!".to_string(),
+                    },
+                    Right: Box::new(Expression::Number(124.0)),
+                },
+            },
+        ]);
 
         assert_eq!(program, expected_program);
     }
