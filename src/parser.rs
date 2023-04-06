@@ -1,4 +1,4 @@
-use crate::ast::{Expression, Program, Statement};
+use crate::ast::{Expression, Op, Precedence, Program, Statement};
 use crate::lexer::Lexer;
 use crate::token::{Token, TokenType};
 
@@ -33,25 +33,31 @@ impl Parser {
                         println!("{:?}", self.lexer.peek());
                         panic!("Expected Equal for assigment")
                     } else {
+                        // Skipping Assigne Token
                         self.lexer.next();
                     }
 
                     let next_token = self.lexer.next();
-                    let expression = self.parse_expression(next_token);
-
-                    statements.push(Statement::Let {
-                        name: identifier.literal,
-                        value: expression,
-                    })
+                    if let Some(expression) = self.parse_expression(next_token, Precedence::Lowest)
+                    {
+                        statements.push(Statement::Let {
+                            name: identifier.literal,
+                            value: expression,
+                        })
+                    };
                 }
                 TokenType::Return => {
                     let next_token = self.lexer.next();
-                    let expression = self.parse_expression(next_token);
-                    statements.push(Statement::Return { value: expression });
+                    if let Some(expression) = self.parse_expression(next_token, Precedence::Lowest)
+                    {
+                        statements.push(Statement::Return { value: expression });
+                    };
                 }
                 _ => {
-                    let expression = self.parse_expression(Some(token));
-                    statements.push(Statement::StatmentExpression { value: expression })
+                    if let Some(expression) = self.parse_expression(Some(token), Precedence::Lowest)
+                    {
+                        statements.push(Statement::StatmentExpression { value: expression })
+                    }
                 }
             }
         }
@@ -60,9 +66,12 @@ impl Parser {
         statements
     }
 
-    pub fn parse_expression(&mut self, token: Option<Token>) -> Expression {
-        dbg!(&token);
-        match token {
+    pub fn parse_expression(
+        &mut self,
+        token: Option<Token>,
+        precedence: Precedence,
+    ) -> Option<Expression> {
+        let mut left = match token.clone() {
             Some(t) => match t {
                 Token {
                     token_type,
@@ -70,26 +79,64 @@ impl Parser {
                 } => match token_type {
                     TokenType::Number => Expression::Number(literal.parse().unwrap()),
                     TokenType::Minus | TokenType::Bang => {
-                        self.prefix_parser_function(token_type, literal)
+                        return self.prefix_parser_function(token_type, literal)
                     }
-                    _ => unimplemented!(),
+                    _ => return None,
                 },
             },
 
-            None => unimplemented!(),
+            None => panic!("Line 88"),
+        };
+
+        while precedence < self.current_precedence(&token.clone().unwrap()) {
+            if let Some(expression) =
+                self.infix_parser_function(left.clone(), token.clone().unwrap())
+            {
+                left = expression
+            } else {
+                break;
+            }
         }
+
+        Some(left)
     }
 
-    pub fn prefix_parser_function(&mut self, token_type: TokenType, literal: String) -> Expression {
+    pub fn prefix_parser_function(
+        &mut self,
+        token_type: TokenType,
+        literal: String,
+    ) -> Option<Expression> {
         let next_token = self.lexer.next();
-        Expression::PrefixExpression {
+        let clone_of_token_type = token_type.clone();
+        Some(Expression::PrefixExpression {
             Token: Token::new(token_type, literal),
-            Right: Box::new(self.parse_expression(next_token)),
+            Op: Op::token(&clone_of_token_type),
+            Right: Box::new(self.parse_expression(next_token, Precedence::Lowest)),
+        })
+    }
+
+    pub fn infix_parser_function(&mut self, left: Expression, token: Token) -> Option<Expression> {
+        let next_token = self.lexer.next();
+        let precedence = self.peek_precedence();
+        dbg!(&token.token_type);
+        Some(Expression::InfixExpression {
+            Token: token.clone(),
+            Left: Box::new(left),
+            Op: Op::token(&token.token_type),
+            Right: Box::new(self.parse_expression(next_token, precedence)),
+        })
+    }
+
+    fn peek_precedence(&mut self) -> Precedence {
+        if let Some(token) = self.lexer.peek() {
+            Precedence::get_precedence(&token.token_type)
+        } else {
+            Precedence::Lowest
         }
     }
 
-    pub fn infix_parser_function(Expr: Expression) -> Expression {
-        todo!()
+    fn current_precedence(&self, token: &Token) -> Precedence {
+        Precedence::get_precedence(&token.token_type)
     }
 }
 
@@ -116,6 +163,7 @@ mod tests {
                         token_type: TokenType::Minus,
                         literal: "-".to_string(),
                     },
+                    Op: Op::Subtract,
                     Right: Box::new(Expression::Number(123.0)),
                 },
             },
@@ -125,6 +173,7 @@ mod tests {
                         token_type: TokenType::Bang,
                         literal: "!".to_string(),
                     },
+                    Op: Op::Bang,
                     Right: Box::new(Expression::Number(124.0)),
                 },
             },

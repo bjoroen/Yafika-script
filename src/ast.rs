@@ -17,26 +17,80 @@ pub enum Expression {
     Number(f64),
     PrefixExpression {
         Token: Token,
-        Right: Box<Expression>,
+        Op: Op,
+        Right: Box<Option<Expression>>,
+    },
+    InfixExpression {
+        Token: Token,
+        Left: Box<Expression>,
+        Op: Op,
+        Right: Box<Option<Expression>>,
     },
 }
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
 pub enum Precedence {
-    Lowest = 0,
-    Equals = 1,
-    LessGreater = 2,
-    Sum = 3,
-    Product = 4,
-    Prefix = 5,
-    Call = 6,
+    Lowest,
+    Equals,
+    LessGreater,
+    Sum,
+    Product,
+    Prefix,
+    Call,
 }
-//
-// #[derive(PartialEq, PartialOrd, Debug, Clone)]
-// pub struct PrefixExpression {
-//     pub Token: TokenType,
-//     pub Operator: String,
-//     pub Right: Expression,
-// }
+
+impl Precedence {
+    pub fn get_precedence(token_type: &TokenType) -> Self {
+        match token_type {
+            TokenType::EqualEqual | TokenType::BangEqual => Precedence::Equals,
+            TokenType::Greater | TokenType::Less => Precedence::LessGreater,
+            TokenType::Addition | TokenType::Minus => Precedence::Sum,
+            TokenType::Division | TokenType::Star => Precedence::Product,
+            _ => Precedence::Lowest,
+        }
+    }
+}
+
+#[derive(PartialEq, Debug, Clone, PartialOrd)]
+pub enum Op {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    // Modulo,
+    Bang,
+    Equals,
+    NotEquals,
+    Assign,
+    LessThan,
+    GreaterThan,
+    LessThanOrEquals,
+    GreaterThanOrEquals,
+    // And,
+    // Or,
+    // Pow,
+    // In,
+    // NotIn,
+}
+
+impl Op {
+    pub fn token(token_type: &TokenType) -> Self {
+        match token_type {
+            TokenType::Addition => Self::Add,
+            TokenType::Minus => Self::Subtract,
+            TokenType::Star => Self::Multiply,
+            TokenType::Division => Self::Divide,
+            TokenType::Bang => Self::Bang,
+            TokenType::EqualEqual => Self::Equals,
+            TokenType::BangEqual => Self::NotEquals,
+            TokenType::Assign => Self::Assign,
+            TokenType::Less => Self::LessThan,
+            TokenType::Greater => Self::GreaterThan,
+            TokenType::LessEqual => Self::LessThanOrEquals,
+            TokenType::GreaterEqual => Self::GreaterThanOrEquals,
+            _ => unreachable!("{:?}", token_type),
+        }
+    }
+}
 
 pub type Program = Vec<Statement>;
