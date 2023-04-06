@@ -151,6 +151,27 @@ mod tests {
     use super::*;
 
     #[test]
+    fn parse_infix_expression() {
+        let lexer = lexer::Lexer::new(String::from("5 + 5"));
+        let mut parser = Parser::new(lexer);
+        let program = parser.parser();
+
+        let expected_program: ast::Program = Vec::from([Statement::StatmentExpression {
+            value: Expression::InfixExpression {
+                Token: Token {
+                    token_type: TokenType::Addition,
+                    literal: "+".to_string(),
+                },
+                Left: Box::new(Expression::Number(5.0)),
+                Op: Op::Add,
+                Right: Box::new(Some(Expression::Number(5.0))),
+            },
+        }]);
+
+        assert_eq!(program, expected_program)
+    }
+
+    #[test]
     fn parse_prefix_expression() {
         let lexer = lexer::Lexer::new(String::from("-123 !124"));
         let mut parser = Parser::new(lexer);
@@ -164,7 +185,7 @@ mod tests {
                         literal: "-".to_string(),
                     },
                     Op: Op::Subtract,
-                    Right: Box::new(Expression::Number(123.0)),
+                    Right: Box::new(Some(Expression::Number(123.0))),
                 },
             },
             Statement::StatmentExpression {
@@ -174,7 +195,7 @@ mod tests {
                         literal: "!".to_string(),
                     },
                     Op: Op::Bang,
-                    Right: Box::new(Expression::Number(124.0)),
+                    Right: Box::new(Some(Expression::Number(124.0))),
                 },
             },
         ]);
