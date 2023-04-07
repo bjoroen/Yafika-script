@@ -88,13 +88,10 @@ impl Parser {
             None => panic!("Line 88"),
         };
 
-        while precedence < self.current_precedence(&token.clone().unwrap()) {
-            if let Some(expression) =
-                self.infix_parser_function(left.clone(), token.clone().unwrap())
-            {
+        while precedence < self.peek_precedence() {
+            let next_token = self.lexer.next().unwrap();
+            if let Some(expression) = self.infix_parser_function(left.clone(), next_token) {
                 left = expression
-            } else {
-                break;
             }
         }
 
@@ -116,8 +113,8 @@ impl Parser {
     }
 
     pub fn infix_parser_function(&mut self, left: Expression, token: Token) -> Option<Expression> {
+        let precedence = self.current_precedence(&token.clone());
         let next_token = self.lexer.next();
-        let precedence = self.peek_precedence();
         dbg!(&token.token_type);
         Some(Expression::InfixExpression {
             Token: token.clone(),
