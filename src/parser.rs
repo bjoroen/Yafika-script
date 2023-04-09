@@ -1,6 +1,8 @@
+use std::io::Error;
+
 use crate::ast::{Expression, Op, Precedence, Program, Statement};
 use crate::lexer::Lexer;
-use crate::token::{Token, TokenType};
+use crate::token::{self, Token, TokenType};
 
 pub struct Parser {
     lexer: Lexer,
@@ -79,6 +81,9 @@ impl Parser {
                 } => match token_type {
                     TokenType::Number => Expression::Number(literal.parse().unwrap()),
                     TokenType::Identifier => Expression::Indentifier(literal),
+                    TokenType::Bool => Expression::Boolean(literal == "True".to_string()),
+                    TokenType::LeftParen => self.parse_grouped_expresion().unwrap(),
+                    TokenType::If => self.parse_if_expressions(),
                     TokenType::Minus | TokenType::Bang => {
                         return self.prefix_parser_function(token_type, literal)
                     }
@@ -100,6 +105,20 @@ impl Parser {
         Some(left)
     }
 
+    pub fn parse_if_expressions(&mut self) -> Expression {
+        todo!()
+    }
+
+    pub fn parse_grouped_expresion(&mut self) -> Option<Expression> {
+        let next_token = self.lexer.next();
+        dbg!(&next_token);
+        let expression = self.parse_expression(next_token, Precedence::Lowest);
+
+        self.expect_n_peek(TokenType::RightParen);
+
+        expression
+    }
+
     pub fn prefix_parser_function(
         &mut self,
         token_type: TokenType,
@@ -117,7 +136,6 @@ impl Parser {
     pub fn infix_parser_function(&mut self, left: Expression, token: Token) -> Option<Expression> {
         let precedence = self.current_precedence(&token.clone());
         let next_token = self.lexer.next();
-        dbg!(&token.token_type);
         Some(Expression::InfixExpression {
             Token: token.clone(),
             Left: Box::new(left),
@@ -136,6 +154,19 @@ impl Parser {
 
     fn current_precedence(&self, token: &Token) -> Precedence {
         Precedence::get_precedence(&token.token_type)
+    }
+
+    fn peek_token_is(&mut self, t: TokenType) -> bool {
+        self.lexer.peek().unwrap().token_type == t
+    }
+
+    fn expect_n_peek(&mut self, token_type: TokenType) -> bool {
+        if self.peek_token_is(token_type) {
+            self.lexer.next();
+            true
+        } else {
+            false
+        }
     }
 }
 

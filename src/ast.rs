@@ -5,7 +5,7 @@ pub struct Node {
     token: Token,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub enum Statement {
     Let { name: String, value: Expression },
     Return { value: Expression },
@@ -13,9 +13,22 @@ pub enum Statement {
 }
 
 #[derive(PartialEq, Debug, Clone, PartialOrd)]
+pub struct BlockStatment {
+    Token: Token,
+    Statment: Vec<Statement>,
+}
+
+#[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub enum Expression {
     Number(f64),
     Indentifier(String),
+    Boolean(bool),
+    IfExpression {
+        Token: Token,
+        Condition: Box<Expression>,
+        Consequence: BlockStatment,
+        Alternative: BlockStatment,
+    },
     PrefixExpression {
         Token: Token,
         Op: Op,

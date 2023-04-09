@@ -6,6 +6,8 @@ pub enum TokenType {
     Fn,
     Else,
     Return,
+    True,
+    False,
 
     // Identifiers + litterals
     Identifier,
