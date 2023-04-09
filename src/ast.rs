@@ -15,6 +15,7 @@ pub enum Statement {
 #[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub enum Expression {
     Number(f64),
+    Indentifier(String),
     PrefixExpression {
         Token: Token,
         Op: Op,

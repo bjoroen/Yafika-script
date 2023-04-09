@@ -233,7 +233,7 @@ impl Lexer {
                 Token::new(token_type, buffer)
             }
             _ => {
-                println!("{}", self.char);
+                dbg!("{}", self.char);
                 unimplemented!()
             }
         }

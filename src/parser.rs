@@ -78,6 +78,7 @@ impl Parser {
                     literal,
                 } => match token_type {
                     TokenType::Number => Expression::Number(literal.parse().unwrap()),
+                    TokenType::Identifier => Expression::Indentifier(literal),
                     TokenType::Minus | TokenType::Bang => {
                         return self.prefix_parser_function(token_type, literal)
                     }
@@ -89,9 +90,10 @@ impl Parser {
         };
 
         while precedence < self.peek_precedence() {
-            let next_token = self.lexer.next().unwrap();
-            if let Some(expression) = self.infix_parser_function(left.clone(), next_token) {
-                left = expression
+            if let Some(next_token) = self.lexer.next() {
+                if let Some(expression) = self.infix_parser_function(left.clone(), next_token) {
+                    left = expression
+                }
             }
         }
 
@@ -149,21 +151,46 @@ mod tests {
 
     #[test]
     fn parse_infix_expression() {
-        let lexer = lexer::Lexer::new(String::from("5 + 5"));
+        let lexer = lexer::Lexer::new(String::from(
+            "
+                5 + 5
+                a + b * 6",
+        ));
         let mut parser = Parser::new(lexer);
         let program = parser.parser();
 
-        let expected_program: ast::Program = Vec::from([Statement::StatmentExpression {
-            value: Expression::InfixExpression {
-                Token: Token {
-                    token_type: TokenType::Addition,
-                    literal: "+".to_string(),
+        let expected_program: ast::Program = Vec::from([
+            Statement::StatmentExpression {
+                value: Expression::InfixExpression {
+                    Token: Token {
+                        token_type: TokenType::Addition,
+                        literal: "+".to_string(),
+                    },
+                    Left: Box::new(Expression::Number(5.0)),
+                    Op: Op::Add,
+                    Right: Box::new(Some(Expression::Number(5.0))),
                 },
-                Left: Box::new(Expression::Number(5.0)),
-                Op: Op::Add,
-                Right: Box::new(Some(Expression::Number(5.0))),
             },
-        }]);
+            Statement::StatmentExpression {
+                value: Expression::InfixExpression {
+                    Token: Token {
+                        token_type: TokenType::Addition,
+                        literal: "+".to_string(),
+                    },
+                    Left: Box::new(Expression::Indentifier("a".to_string())),
+                    Op: Op::Add,
+                    Right: Box::new(Some(Expression::InfixExpression {
+                        Token: Token {
+                            token_type: TokenType::Star,
+                            literal: "*".to_string(),
+                        },
+                        Left: Box::new(Expression::Indentifier("b".to_string())),
+                        Op: Op::Multiply,
+                        Right: Box::new(Some(Expression::Number(6.0))),
+                    })),
+                },
+            },
+        ]);
 
         assert_eq!(program, expected_program)
     }
