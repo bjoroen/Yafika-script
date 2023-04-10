@@ -1,6 +1,6 @@
 use std::io::Error;
 
-use crate::ast::{Expression, Op, Precedence, Program, Statement};
+use crate::ast::{BlockStatment, Expression, Op, Precedence, Program, Statement};
 use crate::lexer::Lexer;
 use crate::token::{self, Token, TokenType};
 
@@ -64,7 +64,7 @@ impl Parser {
             }
         }
 
-        dbg!(&statements);
+        // dbg!(&statements);
         statements
     }
 
@@ -106,7 +106,68 @@ impl Parser {
     }
 
     pub fn parse_if_expressions(&mut self) -> Expression {
-        todo!()
+        if !self.expect_n_peek(TokenType::LeftParen) {
+            panic!("Syntax error")
+        }
+
+        let next_token = self.lexer.next();
+        let condition = self.parse_expression(next_token, Precedence::Lowest);
+
+        if !self.expect_n_peek(TokenType::RightParen) {
+            panic!("Syntax error")
+        }
+
+        if !self.expect_n_peek(TokenType::LeftBrace) {
+            panic!("Syntax error")
+        }
+
+        let consequence = self.parse_block_statment();
+
+        let alternative: Option<BlockStatment> = if self.peek_token_is(TokenType::Else) {
+            if !self.expect_n_peek(TokenType::LeftBrace) {
+                panic!("Syntax error")
+            }
+
+            let alternative = self.parse_block_statment();
+
+            Some(alternative)
+        } else {
+            None
+        };
+
+        Expression::IfExpression {
+            Token: Token {
+                token_type: TokenType::If,
+                literal: "if".to_string(),
+            },
+            Condition: Box::new(condition.expect("Syntax error in condition")),
+            Consequence: consequence,
+            Alternative: alternative,
+        }
+    }
+
+    pub fn parse_block_statment(&mut self) -> BlockStatment {
+        let mut block = Vec::<Statement>::new();
+        let next_token = self.lexer.peek();
+        let token = next_token.unwrap().clone();
+
+        while self.lexer.peek()
+            != Some(Token {
+                token_type: TokenType::RightBrace,
+                literal: "}".to_string(),
+            })
+            && self.lexer.peek() != None
+        {
+            let stmt = self.parser();
+            if !stmt.is_empty() {
+                block = stmt
+            }
+        }
+
+        BlockStatment {
+            Token: token,
+            Statement: block,
+        }
     }
 
     pub fn parse_grouped_expresion(&mut self) -> Option<Expression> {
@@ -157,7 +218,10 @@ impl Parser {
     }
 
     fn peek_token_is(&mut self, t: TokenType) -> bool {
-        self.lexer.peek().unwrap().token_type == t
+        match self.lexer.peek() {
+            Some(token) => token.token_type == t,
+            None => false,
+        }
     }
 
     fn expect_n_peek(&mut self, token_type: TokenType) -> bool {

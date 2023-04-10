@@ -14,8 +14,8 @@ pub enum Statement {
 
 #[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub struct BlockStatment {
-    Token: Token,
-    Statment: Vec<Statement>,
+    pub Token: Token,
+    pub Statement: Vec<Statement>,
 }
 
 #[derive(PartialEq, Debug, Clone, PartialOrd)]
@@ -27,7 +27,7 @@ pub enum Expression {
         Token: Token,
         Condition: Box<Expression>,
         Consequence: BlockStatment,
-        Alternative: BlockStatment,
+        Alternative: Option<BlockStatment>,
     },
     PrefixExpression {
         Token: Token,

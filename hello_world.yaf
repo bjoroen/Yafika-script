@@ -1,5 +1,6 @@
-if (2 > 3) {
-  True
+if (2 > 3) { 
+  let x = 5 
+  let y = 7 + 4 * 2
 } else {
-  false
+  let hello = "hello"
 }
