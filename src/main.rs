@@ -28,7 +28,11 @@ fn main() {
 
         let mut lexer = Lexer::new(source_code.unwrap());
         let mut pars = Parser::new(lexer);
-        pars.parser();
+
+        pars.read();
+        pars.read();
+        let program = pars.parse();
+        dbg!(program);
     }
 
     if (env::args().len() == 1) {
