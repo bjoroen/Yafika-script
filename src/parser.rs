@@ -27,7 +27,8 @@ impl Parser {
     pub fn parse(&mut self) -> Program {
         let mut program: Program = Vec::new();
 
-        while let Some(statement) = self.parse_statements() {
+        while let Some(statement) = self.next() {
+            // dbg!(&statement);
             program.push(statement);
         }
 
@@ -35,23 +36,18 @@ impl Parser {
     }
 
     pub fn parse_statements(&mut self) -> Option<Statement> {
-        let mut statements: Vec<Statement> = Vec::new();
-
         let stmt = match self.current.token_type {
             TokenType::Let => {
-                let identifier = if let Some(identifier) = self.lexer.next() {
-                    identifier
-                } else {
-                    panic!("Expected identifier")
-                };
-
-                dbg!(&self.current);
+                // TODO: I want this to fail if Let is not followed by identifier
+                let identifier = self.peek.clone();
+                self.read();
                 if !self.expect_n_peek(TokenType::Assign) {
                     panic!("Expected Assign token")
                 }
 
                 self.read();
                 if let Some(expression) = self.parse_expression(Precedence::Lowest) {
+                    self.read();
                     Some(Statement::Let {
                         name: identifier.literal,
                         value: expression,
@@ -63,6 +59,7 @@ impl Parser {
             TokenType::Return => {
                 self.read();
                 if let Some(expression) = self.parse_expression(Precedence::Lowest) {
+                    self.read();
                     Some(Statement::Return { value: expression })
                 } else {
                     None
@@ -70,6 +67,7 @@ impl Parser {
             }
             _ => {
                 if let Some(expression) = self.parse_expression(Precedence::Lowest) {
+                    self.read();
                     Some(Statement::StatmentExpression { value: expression })
                 } else {
                     None
@@ -77,7 +75,7 @@ impl Parser {
             }
         };
 
-        dbg!(&statements);
+        // dbg!(&stmt);
         stmt
     }
 
@@ -88,25 +86,20 @@ impl Parser {
             TokenType::Bool => Expression::Boolean(self.current.literal == "True".to_string()),
             TokenType::If => self.parse_if_expressions(),
             TokenType::LeftParen => self.parse_grouped_expresion().unwrap(),
-            TokenType::Minus | TokenType::Bang => {
-                return self.prefix_parser_function(
-                    self.current.clone().token_type,
-                    self.current.clone().literal,
-                )
-            }
+            TokenType::Minus | TokenType::Bang => return self.prefix_parser_function(),
             _ => {
                 return None;
             }
         };
 
-        while precedence < self.peek_precedence() {
+        while self.peek.token_type != TokenType::EOF && precedence < self.peek_precedence() {
             if let Some(expression) = self.infix_parser_function(left.clone()) {
                 left = expression
             }
             self.read();
         }
 
-        dbg!(&self.current);
+        // dbg!(&left);
         Some(left)
     }
 
@@ -117,7 +110,7 @@ impl Parser {
 
         let condition = self.parse_expression(Precedence::Lowest);
 
-        dbg!(&condition);
+        // dbg!(&condition);
 
         if !self.expect_n_peek(TokenType::RightParen) {
             panic!("Syntax error")
@@ -181,30 +174,29 @@ impl Parser {
         expression
     }
 
-    pub fn prefix_parser_function(
-        &mut self,
-        token_type: TokenType,
-        literal: String,
-    ) -> Option<Expression> {
-        let clone_of_token_type = token_type.clone();
+    pub fn prefix_parser_function(&mut self) -> Option<Expression> {
+        let current = self.current.clone();
+        // dbg!(&current);
+        self.read();
+
         Some(Expression::PrefixExpression {
-            Token: Token::new(token_type, literal),
-            Op: Op::token(&clone_of_token_type),
+            Token: current.clone(),
+            Op: Op::token(&current.token_type),
             Right: Box::new(self.parse_expression(Precedence::Lowest)),
         })
     }
 
     pub fn infix_parser_function(&mut self, left: Expression) -> Option<Expression> {
         let precedence = self.current_precedence();
-        let last_current_token = self.current.clone();
-        let last_peek_token = self.peek.clone();
 
+        //TODO: FIND OUT: Why do I have to read twice here. makes no sense
+        let last_peek_token = self.peek.clone();
         self.read();
         self.read();
         Some(Expression::InfixExpression {
-            Token: last_current_token,
             Left: Box::new(left),
             Op: Op::token(&last_peek_token.token_type),
+            Token: last_peek_token,
             Right: Box::new(self.parse_expression(precedence)),
         })
     }
@@ -237,13 +229,22 @@ impl Parser {
     pub fn read(&mut self) {
         self.current = self.peek.clone();
         self.peek = if let Some(token) = self.lexer.next() {
-            token.clone()
+            token
         } else {
+            // dbg!(&self.current);
             Token {
                 token_type: TokenType::EOF,
                 literal: "".to_string(),
             }
         }
+    }
+
+    pub fn next(&mut self) -> Option<Statement> {
+        if self.current.token_type == TokenType::EOF {
+            return None;
+        }
+
+        self.parse_statements()
     }
 }
 
@@ -259,13 +260,11 @@ mod tests {
 
     #[test]
     fn parse_infix_expression() {
-        let lexer = lexer::Lexer::new(String::from(
-            "
-                5 + 5
-                a + b * 6",
-        ));
+        let lexer = lexer::Lexer::new(String::from("5 + 5 EOF a + b * 6"));
         let mut parser = Parser::new(lexer);
-        let program = parser.parse_statements();
+        parser.read();
+        parser.read();
+        let program = parser.parse();
 
         let expected_program: ast::Program = Vec::from([
             Statement::StatmentExpression {
@@ -307,7 +306,9 @@ mod tests {
     fn parse_prefix_expression() {
         let lexer = lexer::Lexer::new(String::from("-123 !124"));
         let mut parser = Parser::new(lexer);
-        let program = parser.parser_statments();
+        parser.read();
+        parser.read();
+        let program = parser.parse();
 
         let expected_program: ast::Program = Vec::from([
             Statement::StatmentExpression {
@@ -339,7 +340,9 @@ mod tests {
     fn parser_let_test() {
         let lexer = lexer::Lexer::new(String::from("let hello = 123"));
         let mut parser = Parser::new(lexer);
-        let program = parser.parser_statments();
+        parser.read();
+        parser.read();
+        let program = parser.parse();
 
         let expected_program: ast::Program = Vec::from([Statement::Let {
             name: "hello".to_string(),
@@ -358,7 +361,9 @@ mod tests {
                 return 92031203",
         ));
         let mut parser = Parser::new(lexer);
-        let program = parser.parser_statments();
+        parser.read();
+        parser.read();
+        let program = parser.parse();
 
         let expected_program: ast::Program = Vec::from([
             Statement::Return {
