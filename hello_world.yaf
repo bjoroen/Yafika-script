@@ -1,1 +1,5 @@
-5 + 5 EOF a + b * 6
+if (2 < 3) {
+  let x = 2
+} else {
+  let x = 3
+}

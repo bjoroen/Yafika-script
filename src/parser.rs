@@ -47,7 +47,6 @@ impl Parser {
 
                 self.read();
                 if let Some(expression) = self.parse_expression(Precedence::Lowest) {
-                    self.read();
                     Some(Statement::Let {
                         name: identifier.literal,
                         value: expression,
@@ -59,7 +58,6 @@ impl Parser {
             TokenType::Return => {
                 self.read();
                 if let Some(expression) = self.parse_expression(Precedence::Lowest) {
-                    self.read();
                     Some(Statement::Return { value: expression })
                 } else {
                     None
@@ -67,7 +65,6 @@ impl Parser {
             }
             _ => {
                 if let Some(expression) = self.parse_expression(Precedence::Lowest) {
-                    self.read();
                     Some(Statement::StatmentExpression { value: expression })
                 } else {
                     None
@@ -76,6 +73,7 @@ impl Parser {
         };
 
         // dbg!(&stmt);
+        self.read();
         stmt
     }
 
@@ -110,20 +108,14 @@ impl Parser {
 
         let condition = self.parse_expression(Precedence::Lowest);
 
-        // dbg!(&condition);
-
-        if !self.expect_n_peek(TokenType::RightParen) {
-            panic!("Syntax error")
-        }
-
-        if self.expect_n_peek(TokenType::LeftBrace) {
+        if !self.expect_n_peek(TokenType::LeftBrace) {
             panic!("Syntax error")
         }
 
         let consequence = self.parse_block_statment();
 
         let alternative: Option<BlockStatment> = if self.peek_token_is(TokenType::Else) {
-            if !self.expect_n_peek(TokenType::LeftBrace) {
+            if self.expect_n_peek(TokenType::LeftBrace) {
                 panic!("Syntax error")
             }
 
@@ -147,6 +139,8 @@ impl Parser {
 
     pub fn parse_block_statment(&mut self) -> BlockStatment {
         let mut block = Vec::<Statement>::new();
+
+        self.read();
         let next_token = &self.current;
         let token = next_token.clone();
 
