@@ -23,6 +23,11 @@ pub enum Expression {
     Number(f64),
     Indentifier(String),
     Boolean(bool),
+    FunctionLiteral {
+        TokenL: Token,
+        Parameters: Vec<Expression>,
+        Body: BlockStatment,
+    },
     IfExpression {
         Token: Token,
         Condition: Box<Expression>,

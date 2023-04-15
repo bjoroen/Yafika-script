@@ -1,5 +1,4 @@
-if (2 < 3) {
-  let x = 2
-} else {
-  let x = 3
+fn(x,y){
+let x = 3
+let y = 4
 }

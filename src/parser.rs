@@ -38,7 +38,6 @@ impl Parser {
     pub fn parse_statements(&mut self) -> Option<Statement> {
         let stmt = match self.current.token_type {
             TokenType::Let => {
-                // TODO: I want this to fail if Let is not followed by identifier
                 let identifier = self.peek.clone();
                 self.read();
                 if !self.expect_n_peek(TokenType::Assign) {
@@ -72,7 +71,6 @@ impl Parser {
             }
         };
 
-        // dbg!(&stmt);
         self.read();
         stmt
     }
@@ -85,6 +83,7 @@ impl Parser {
             TokenType::If => self.parse_if_expressions(),
             TokenType::LeftParen => self.parse_grouped_expresion().unwrap(),
             TokenType::Minus | TokenType::Bang => return self.prefix_parser_function(),
+            TokenType::Fn => self.parse_function(),
             _ => {
                 return None;
             }
@@ -99,6 +98,54 @@ impl Parser {
 
         // dbg!(&left);
         Some(left)
+    }
+
+    fn parse_function(&mut self) -> Expression {
+        let token = self.current.clone();
+        if !self.expect_n_peek(TokenType::LeftParen) {
+            panic!("Syntax error, got: {:#?}", self.peek)
+        }
+        self.read();
+
+        let params = self.parse_parameters();
+
+        let body = self.parse_block_statment();
+
+        Expression::FunctionLiteral {
+            TokenL: token,
+            Parameters: params,
+            Body: body,
+        }
+    }
+
+    fn parse_parameters(&mut self) -> Vec<Expression> {
+        let mut identifiers = Vec::<Expression>::new();
+
+        if self.peek_token_is(TokenType::RightParen) {
+            self.read();
+            return identifiers;
+        }
+
+        identifiers.push(Expression::Indentifier(self.current.literal.clone()));
+
+        while self.peek_token_is(TokenType::Comma) {
+            self.read();
+            self.read();
+            if let Some(ident_exp) = self.parse_expression(Precedence::Lowest) {
+                if !matches!(ident_exp, Expression::Indentifier(..)) {
+                    panic!("Didnt get identifier, got strange shit")
+                }
+
+                identifiers.push(ident_exp)
+            }
+        }
+
+        if !self.expect_n_peek(TokenType::RightParen) {
+            panic!("Syntax error, {:#?}", &self.peek)
+        }
+        self.read();
+
+        identifiers
     }
 
     pub fn parse_if_expressions(&mut self) -> Expression {
@@ -224,7 +271,6 @@ impl Parser {
         self.peek = if let Some(token) = self.lexer.next() {
             token
         } else {
-            // dbg!(&self.current);
             Token {
                 token_type: TokenType::EOF,
                 literal: "".to_string(),
