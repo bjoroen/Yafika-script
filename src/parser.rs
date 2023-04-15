@@ -147,7 +147,6 @@ impl Parser {
         while self.current.token_type != TokenType::RightBrace
             && self.current.token_type != TokenType::EOF
         {
-            // dbg!(self.lexer.next());
             if let Some(stmt) = self.parse_statements() {
                 block.push(stmt)
             }
@@ -251,6 +250,55 @@ mod tests {
     };
 
     use super::*;
+
+    #[test]
+    fn parse_if_and_ifelse_expression() {
+        let lexer = lexer::Lexer::new(String::from("if(2 > 5) { let x = 2} else {let x = 4}"));
+        let mut parser = Parser::new(lexer);
+        parser.read();
+        parser.read();
+        let program = parser.parse();
+
+        let expected_program: ast::Program = Vec::from([Statement::StatmentExpression {
+            value: Expression::IfExpression {
+                Token: Token {
+                    token_type: TokenType::If,
+                    literal: "if".to_string(),
+                },
+                Condition: Box::new(Expression::InfixExpression {
+                    Token: Token {
+                        token_type: TokenType::Less,
+                        literal: ">".to_string(),
+                    },
+                    Left: Box::new(Expression::Number(2.0)),
+                    Op: Op::LessThan,
+                    Right: Box::new(Some(Expression::Number(5.0))),
+                }),
+                Consequence: BlockStatment {
+                    Token: Token {
+                        token_type: TokenType::Let,
+                        literal: "let".to_string(),
+                    },
+                    Statement: vec![Statement::Let {
+                        name: "x".to_string(),
+                        value: Expression::Number(2.0),
+                    }],
+                },
+                Alternative: Some(BlockStatment {
+                    Token: Token {
+                        token_type: TokenType::Else,
+                        literal: "else".to_string(),
+                    },
+                    Statement: vec![Statement::Let {
+                        name: "x".to_string(),
+                        value: Expression::Number(4.0),
+                    }],
+                }),
+            },
+        }]);
+
+        assert_eq!(program, expected_program)
+    }
 
     #[test]
     fn parse_infix_expression() {
