@@ -1,4 +1,4 @@
-fn(x,y){
-let x = 3
-let y = 4
+fn(){
+  let x = a + b;
+  return x
 }

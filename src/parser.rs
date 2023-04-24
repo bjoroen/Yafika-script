@@ -1,8 +1,7 @@
-use std::io::Error;
-
 use crate::ast::{BlockStatment, Expression, Op, Precedence, Program, Statement};
 use crate::lexer::Lexer;
 use crate::token::{self, Token, TokenType};
+use std::io::Error;
 
 pub struct Parser {
     lexer: Lexer,
@@ -89,7 +88,10 @@ impl Parser {
             }
         };
 
-        while self.peek.token_type != TokenType::EOF && precedence < self.peek_precedence() {
+        while self.peek.token_type != TokenType::EOF
+            && self.peek.token_type != TokenType::SemiColon
+            && precedence < self.peek_precedence()
+        {
             if let Some(expression) = self.infix_parser_function(left.clone()) {
                 left = expression
             }
@@ -107,23 +109,23 @@ impl Parser {
         }
         self.read();
 
-        let params = self.parse_parameters();
+        let params = self.pase_fn_parameters();
 
         let body = self.parse_block_statment();
 
         Expression::FunctionLiteral {
-            TokenL: token,
+            Token: token,
             Parameters: params,
             Body: body,
         }
     }
 
-    fn parse_parameters(&mut self) -> Vec<Expression> {
+    fn pase_fn_parameters(&mut self) -> Option<Vec<Expression>> {
         let mut identifiers = Vec::<Expression>::new();
 
-        if self.peek_token_is(TokenType::RightParen) {
+        if self.current.token_type == TokenType::RightParen {
             self.read();
-            return identifiers;
+            return None;
         }
 
         identifiers.push(Expression::Indentifier(self.current.literal.clone()));
@@ -145,24 +147,26 @@ impl Parser {
         }
         self.read();
 
-        identifiers
+        Some(identifiers)
     }
 
     pub fn parse_if_expressions(&mut self) -> Expression {
         if !self.expect_n_peek(TokenType::LeftParen) {
             panic!("Syntax error")
         }
+        self.read();
 
         let condition = self.parse_expression(Precedence::Lowest);
 
         if !self.expect_n_peek(TokenType::LeftBrace) {
-            panic!("Syntax error")
+            panic!("Syntax error, {:#?}", &self.current)
         }
 
         let consequence = self.parse_block_statment();
 
         let alternative: Option<BlockStatment> = if self.peek_token_is(TokenType::Else) {
-            if self.expect_n_peek(TokenType::LeftBrace) {
+            self.read();
+            if !self.expect_n_peek(TokenType::LeftBrace) {
                 panic!("Syntax error")
             }
 
@@ -188,8 +192,6 @@ impl Parser {
         let mut block = Vec::<Statement>::new();
 
         self.read();
-        let next_token = &self.current;
-        let token = next_token.clone();
 
         while self.current.token_type != TokenType::RightBrace
             && self.current.token_type != TokenType::EOF
@@ -199,10 +201,7 @@ impl Parser {
             }
         }
 
-        BlockStatment {
-            Token: token,
-            Statement: block,
-        }
+        BlockStatment { Statement: block }
     }
 
     pub fn parse_grouped_expresion(&mut self) -> Option<Expression> {
@@ -233,11 +232,13 @@ impl Parser {
         let last_peek_token = self.peek.clone();
         self.read();
         self.read();
+        let right = self.parse_expression(precedence);
+
         Some(Expression::InfixExpression {
             Left: Box::new(left),
             Op: Op::token(&last_peek_token.token_type),
             Token: last_peek_token,
-            Right: Box::new(self.parse_expression(precedence)),
+            Right: Box::new(right),
         })
     }
 
@@ -296,6 +297,88 @@ mod tests {
     };
 
     use super::*;
+    #[test]
+    fn parse_fn_literals_no_args() {
+        let lexer = lexer::Lexer::new(String::from("fn(){let x = a + b; return x}"));
+        let mut parser = Parser::new(lexer);
+        parser.read();
+        parser.read();
+        let program = parser.parse();
+
+        let expected_program: ast::Program = Vec::from([Statement::StatmentExpression {
+            value: Expression::FunctionLiteral {
+                Token: Token {
+                    token_type: TokenType::Fn,
+                    literal: "fn".to_string(),
+                },
+                Parameters: None,
+                Body: BlockStatment {
+                    Statement: vec![
+                        Statement::Let {
+                            name: "x".to_string(),
+                            value: Expression::InfixExpression {
+                                Token: Token {
+                                    token_type: TokenType::Addition,
+                                    literal: "+".to_string(),
+                                },
+                                Left: Box::new(Expression::Indentifier("a".to_string())),
+                                Op: Op::Add,
+                                Right: Box::new(Some(Expression::Indentifier("b".to_string()))),
+                            },
+                        },
+                        Statement::Return {
+                            value: Expression::Indentifier("x".to_string()),
+                        },
+                    ],
+                },
+            },
+        }]);
+
+        assert_eq!(program, expected_program)
+    }
+
+    #[test]
+    fn parse_fn_literals_with_args() {
+        let lexer = lexer::Lexer::new(String::from("fn(a,b){let x = a + b; return x}"));
+        let mut parser = Parser::new(lexer);
+        parser.read();
+        parser.read();
+        let program = parser.parse();
+
+        let expected_program: ast::Program = Vec::from([Statement::StatmentExpression {
+            value: Expression::FunctionLiteral {
+                Token: Token {
+                    token_type: TokenType::Fn,
+                    literal: "fn".to_string(),
+                },
+                Parameters: Some(vec![
+                    Expression::Indentifier("a".to_string()),
+                    Expression::Indentifier("b".to_string()),
+                ]),
+                Body: BlockStatment {
+                    Statement: vec![
+                        Statement::Let {
+                            name: "x".to_string(),
+                            value: Expression::InfixExpression {
+                                Token: Token {
+                                    token_type: TokenType::Addition,
+                                    literal: "+".to_string(),
+                                },
+                                Left: Box::new(Expression::Indentifier("a".to_string())),
+                                Op: Op::Add,
+                                Right: Box::new(Some(Expression::Indentifier("b".to_string()))),
+                            },
+                        },
+                        Statement::Return {
+                            value: Expression::Indentifier("x".to_string()),
+                        },
+                    ],
+                },
+            },
+        }]);
+
+        assert_eq!(program, expected_program)
+    }
 
     #[test]
     fn parse_if_and_ifelse_expression() {
@@ -321,20 +404,12 @@ mod tests {
                     Right: Box::new(Some(Expression::Number(5.0))),
                 }),
                 Consequence: BlockStatment {
-                    Token: Token {
-                        token_type: TokenType::Let,
-                        literal: "let".to_string(),
-                    },
                     Statement: vec![Statement::Let {
                         name: "x".to_string(),
                         value: Expression::Number(2.0),
                     }],
                 },
                 Alternative: Some(BlockStatment {
-                    Token: Token {
-                        token_type: TokenType::Else,
-                        literal: "else".to_string(),
-                    },
                     Statement: vec![Statement::Let {
                         name: "x".to_string(),
                         value: Expression::Number(4.0),
@@ -348,7 +423,7 @@ mod tests {
 
     #[test]
     fn parse_infix_expression() {
-        let lexer = lexer::Lexer::new(String::from("5 + 5 EOF a + b * 6"));
+        let lexer = lexer::Lexer::new(String::from("5 + 5;  a + b * 6;"));
         let mut parser = Parser::new(lexer);
         parser.read();
         parser.read();

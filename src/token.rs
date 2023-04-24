@@ -31,6 +31,7 @@ pub enum TokenType {
     LessEqual,
 
     // Delimiters
+    SemiColon,
     Comma,
     LeftParen,
     RightParen,

@@ -38,6 +38,7 @@ impl Lexer {
         while self.char.is_whitespace() {
             self.read()
         }
+
     }
 
     pub fn peek(&mut self) -> Option<Token> {
@@ -83,6 +84,10 @@ impl Lexer {
             ',' => {
                 self.read();
                 Token::new(TokenType::Comma, ",".to_owned())
+            }
+            ';' => {
+                self.read();
+                Token::new(TokenType::SemiColon, ";".to_owned())
             }
             '<' => {
                 let mut buffer: String = String::new();

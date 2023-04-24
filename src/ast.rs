@@ -12,20 +12,21 @@ pub enum Statement {
     StatmentExpression { value: Expression },
 }
 
+#[allow(non_snake_case)]
 #[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub struct BlockStatment {
-    pub Token: Token,
     pub Statement: Vec<Statement>,
 }
 
+#[allow(non_snake_case)]
 #[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub enum Expression {
     Number(f64),
     Indentifier(String),
     Boolean(bool),
     FunctionLiteral {
-        TokenL: Token,
-        Parameters: Vec<Expression>,
+        Token: Token,
+        Parameters: Option<Vec<Expression>>,
         Body: BlockStatment,
     },
     IfExpression {
@@ -47,6 +48,7 @@ pub enum Expression {
     },
 }
 
+#[allow(dead_code)]
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
 pub enum Precedence {
     Lowest,
