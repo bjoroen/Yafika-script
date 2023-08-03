@@ -1,4 +1,11 @@
-fn(){
-  let x = a + b;
-  return x
+if (2 > 2) {
+ let x = 4;
+} else {
+  let x = 5;
+}
+
+fn(x){
+let x = 4;
+
+return x
 }

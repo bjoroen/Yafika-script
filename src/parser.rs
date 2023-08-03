@@ -113,6 +113,8 @@ impl Parser {
 
         let body = self.parse_block_statment();
 
+        dbg!(&body);
+
         Expression::FunctionLiteral {
             Token: token,
             Parameters: params,
