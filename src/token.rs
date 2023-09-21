@@ -1,4 +1,4 @@
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub enum TokenType {
     // KeyWords
     If,
@@ -6,6 +6,8 @@ pub enum TokenType {
     Fn,
     Else,
     Return,
+    True,
+    False,
 
     // Identifiers + litterals
     Identifier,
@@ -29,14 +31,18 @@ pub enum TokenType {
     LessEqual,
 
     // Delimiters
+    SemiColon,
     Comma,
     LeftParen,
     RightParen,
     RightBrace,
     LeftBrace,
+
+    // END OF FILE
+    EOF,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub struct Token {
     pub token_type: TokenType,
     pub literal: String,

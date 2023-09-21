@@ -4,7 +4,7 @@ use crate::token::{Token, TokenType};
 pub struct Lexer {
     pub tokens: Vec<Token>,
     source: Vec<char>,
-    current: usize,
+    pub current: usize,
     next: usize,
     char: char,
 }
@@ -38,6 +38,7 @@ impl Lexer {
         while self.char.is_whitespace() {
             self.read()
         }
+
     }
 
     pub fn peek(&mut self) -> Option<Token> {
@@ -49,8 +50,6 @@ impl Lexer {
         let old_next = self.next;
         let old_char = self.char;
 
-        self.char = self.source[self.next];
-
         let token = self.match_token();
 
         self.current = old_current;
@@ -60,7 +59,7 @@ impl Lexer {
         Some(token)
     }
 
-    fn match_token(&mut self) -> Token {
+    pub fn match_token(&mut self) -> Token {
         self.skip_whitespace();
 
         match self.char {
@@ -85,6 +84,10 @@ impl Lexer {
             ',' => {
                 self.read();
                 Token::new(TokenType::Comma, ",".to_owned())
+            }
+            ';' => {
+                self.read();
+                Token::new(TokenType::SemiColon, ";".to_owned())
             }
             '<' => {
                 let mut buffer: String = String::new();
@@ -141,7 +144,7 @@ impl Lexer {
                 buffer.push(self.char);
                 self.read();
 
-                while !self.char.is_whitespace() {
+                while !self.char.is_whitespace() && !self.char.is_alphanumeric() {
                     buffer.push(self.char);
                     self.read();
                 }
@@ -235,7 +238,7 @@ impl Lexer {
                 Token::new(token_type, buffer)
             }
             _ => {
-                println!("{}", self.char);
+                dbg!("{}", self.char);
                 unimplemented!()
             }
         }

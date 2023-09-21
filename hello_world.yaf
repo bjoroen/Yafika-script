@@ -1,2 +1,11 @@
-let x = 1000.00
-let y = , !
+if (2 > 2) {
+ let x = 4;
+} else {
+  let x = 5;
+}
+
+fn(x){
+let x = 4;
+
+return x
+}
