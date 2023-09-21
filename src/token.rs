@@ -36,6 +36,7 @@ pub enum TokenType {
     LeftBrace,
 }
 
+// This is good
 #[derive(PartialEq, Debug)]
 pub struct Token {
     pub token_type: TokenType,
