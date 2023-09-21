@@ -8,6 +8,7 @@ pub struct Scanner {
     line: usize,
 }
 
+// new commit
 impl Scanner {
     pub fn new(source: String) -> Scanner {
         Scanner {
