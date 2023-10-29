@@ -38,25 +38,6 @@ impl Lexer {
         while self.char.is_whitespace() {
             self.read()
         }
-
-    }
-
-    pub fn peek(&mut self) -> Option<Token> {
-        if self.next >= self.source.len() {
-            return None;
-        }
-
-        let old_current = self.current;
-        let old_next = self.next;
-        let old_char = self.char;
-
-        let token = self.match_token();
-
-        self.current = old_current;
-        self.next = old_next;
-        self.char = old_char;
-
-        Some(token)
     }
 
     pub fn match_token(&mut self) -> Token {

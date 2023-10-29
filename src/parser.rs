@@ -1,7 +1,8 @@
 use crate::ast::{BlockStatment, Expression, Op, Precedence, Program, Statement};
 use crate::lexer::Lexer;
-use crate::token::{self, Token, TokenType};
-use std::io::Error;
+use crate::token::{Token, TokenType};
+#[cfg(test)]
+use pretty_assertions::assert_eq as p_assert_eq;
 
 pub struct Parser {
     lexer: Lexer,
@@ -13,21 +14,25 @@ impl Parser {
     pub fn new(lexer: Lexer) -> Self {
         Self {
             lexer,
+            // Starting the parser with the peek token as EOF
             peek: Token {
                 token_type: TokenType::EOF,
                 literal: "".to_string(),
             },
+
+            // Starting the parser with the current token as EOF
             current: Token {
                 token_type: TokenType::EOF,
                 literal: "".to_string(),
             },
         }
     }
+
     pub fn parse(&mut self) -> Program {
+        dbg!(&self.lexer.tokens);
         let mut program: Program = Vec::new();
 
         while let Some(statement) = self.next() {
-            // dbg!(&statement);
             program.push(statement);
         }
 
@@ -81,24 +86,24 @@ impl Parser {
             TokenType::Bool => Expression::Boolean(self.current.literal == "True".to_string()),
             TokenType::If => self.parse_if_expressions(),
             TokenType::LeftParen => self.parse_grouped_expresion().unwrap(),
-            TokenType::Minus | TokenType::Bang => return self.prefix_parser_function(),
+            TokenType::Minus | TokenType::Bang => return self.parse_prefix_expression(),
             TokenType::Fn => self.parse_function(),
             _ => {
                 return None;
             }
         };
 
+        // dbg!(&left);
+
         while self.peek.token_type != TokenType::EOF
             && self.peek.token_type != TokenType::SemiColon
             && precedence < self.peek_precedence()
         {
-            if let Some(expression) = self.infix_parser_function(left.clone()) {
+            if let Some(expression) = self.parse_infix_expression(left.clone()) {
                 left = expression
             }
-            self.read();
         }
 
-        // dbg!(&left);
         Some(left)
     }
 
@@ -112,8 +117,6 @@ impl Parser {
         let params = self.pase_fn_parameters();
 
         let body = self.parse_block_statment();
-
-        dbg!(&body);
 
         Expression::FunctionLiteral {
             Token: token,
@@ -160,6 +163,7 @@ impl Parser {
 
         let condition = self.parse_expression(Precedence::Lowest);
 
+        self.read();
         if !self.expect_n_peek(TokenType::LeftBrace) {
             panic!("Syntax error, {:#?}", &self.current)
         }
@@ -215,9 +219,8 @@ impl Parser {
         expression
     }
 
-    pub fn prefix_parser_function(&mut self) -> Option<Expression> {
+    pub fn parse_prefix_expression(&mut self) -> Option<Expression> {
         let current = self.current.clone();
-        // dbg!(&current);
         self.read();
 
         Some(Expression::PrefixExpression {
@@ -227,31 +230,68 @@ impl Parser {
         })
     }
 
-    pub fn infix_parser_function(&mut self, left: Expression) -> Option<Expression> {
-        let precedence = self.current_precedence();
+    pub fn parse_infix_expression(&mut self, left: Expression) -> Option<Expression> {
+        match self.peek.token_type {
+            TokenType::LeftParen => {
+                self.read();
+                if self.peek.token_type == TokenType::RightParen {
+                    Some(Expression::CallExpression {
+                        Token: self.current.clone(),
+                        Function: Box::new(left),
+                        Arguments: vec![],
+                    })
+                } else {
+                    let mut args = Vec::<Option<Expression>>::new();
 
-        //TODO: FIND OUT: Why do I have to read twice here. makes no sense
-        let last_peek_token = self.peek.clone();
-        self.read();
-        self.read();
-        let right = self.parse_expression(precedence);
+                    let expression_token = self.current.clone();
+                    self.read();
 
-        Some(Expression::InfixExpression {
-            Left: Box::new(left),
-            Op: Op::token(&last_peek_token.token_type),
-            Token: last_peek_token,
-            Right: Box::new(right),
-        })
+                    args.push(self.parse_expression(Precedence::Lowest));
+
+                    while self.peek_token_is(TokenType::Comma) {
+                        self.read();
+                        self.read();
+                        if let Some(expr) = self.parse_expression(Precedence::Lowest) {
+                            args.push(Some(expr))
+                        }
+                    }
+
+                    Some(Expression::CallExpression {
+                        Token: expression_token,
+                        Function: Box::new(left),
+                        Arguments: args,
+                    })
+                }
+            }
+            _ => {
+                let precedence = self.peek_precedence();
+                let last_peek_token = self.peek.clone();
+
+                self.read();
+                self.read();
+                let right = self.parse_expression(precedence);
+
+                Some(Expression::InfixExpression {
+                    Left: Box::new(left),
+                    Op: Op::token(&last_peek_token.token_type),
+                    Token: last_peek_token,
+                    Right: Box::new(right),
+                })
+            }
+        }
     }
 
+    /// Looks at the precedence of the next token type
     fn peek_precedence(&mut self) -> Precedence {
         Precedence::get_precedence(&self.peek.token_type)
     }
 
+    /// Looks at the precedence of the current token type
     fn current_precedence(&self) -> Precedence {
         Precedence::get_precedence(&self.current.token_type)
     }
 
+    /// Given a token token type, returns a bool depending if the next token type is of that type
     fn peek_token_is(&mut self, t: TokenType) -> bool {
         if self.peek.token_type == t {
             true
@@ -260,6 +300,8 @@ impl Parser {
         }
     }
 
+    /// Given a TokenType returns a bool if its the correct token type, this fuction eats the next
+    /// token if it is the expected type
     fn expect_n_peek(&mut self, token_type: TokenType) -> bool {
         if self.peek_token_is(token_type) {
             self.read();
@@ -269,6 +311,7 @@ impl Parser {
         }
     }
 
+    /// Reads and eats the next token
     pub fn read(&mut self) {
         self.current = self.peek.clone();
         self.peek = if let Some(token) = self.lexer.next() {
@@ -281,6 +324,7 @@ impl Parser {
         }
     }
 
+    /// Returns the next token
     pub fn next(&mut self) -> Option<Statement> {
         if self.current.token_type == TokenType::EOF {
             return None;
@@ -299,6 +343,70 @@ mod tests {
     };
 
     use super::*;
+    #[test]
+    fn parse_call_expressionss() {
+        let lexer = lexer::Lexer::new(String::from("add(1, 2 * 3, 4 + 5)"));
+        let mut parser = Parser::new(lexer);
+        parser.read();
+        parser.read();
+        let program = parser.parse();
+
+        let expected_program: ast::Program = Vec::from([Statement::StatmentExpression {
+            value: Expression::CallExpression {
+                Token: Token {
+                    token_type: TokenType::LeftParen,
+                    literal: "(".to_string(),
+                },
+                Function: Box::new(Expression::Indentifier("add".to_string())),
+                Arguments: vec![
+                    Some(Expression::Number(1.00)),
+                    Some(Expression::InfixExpression {
+                        Token: Token {
+                            token_type: TokenType::Star,
+                            literal: "*".to_string(),
+                        },
+                        Left: Box::new(Expression::Number(2.00)),
+                        Op: Op::Multiply,
+                        Right: Box::new(Some(Expression::Number(3.00))),
+                    }),
+                    Some(Expression::InfixExpression {
+                        Token: Token {
+                            token_type: TokenType::Addition,
+                            literal: "+".to_string(),
+                        },
+                        Left: Box::new(Expression::Number(4.00)),
+                        Op: Op::Add,
+                        Right: Box::new(Some(Expression::Number(5.00))),
+                    }),
+                ],
+            },
+        }]);
+
+        p_assert_eq!(program, expected_program)
+    }
+
+    #[test]
+    fn parse_call_no_args_expressionss() {
+        let lexer = lexer::Lexer::new(String::from("add() "));
+        let mut parser = Parser::new(lexer);
+        parser.read();
+        parser.read();
+        let program = parser.parse();
+
+        let expected_program: ast::Program = Vec::from([Statement::StatmentExpression {
+            value: Expression::CallExpression {
+                Token: Token {
+                    token_type: TokenType::LeftParen,
+                    literal: "(".to_string(),
+                },
+                Function: Box::new(Expression::Indentifier("add".to_string())),
+                Arguments: vec![],
+            },
+        }]);
+
+        p_assert_eq!(program, expected_program)
+    }
+
     #[test]
     fn parse_fn_literals_no_args() {
         let lexer = lexer::Lexer::new(String::from("fn(){let x = a + b; return x}"));
@@ -425,7 +533,10 @@ mod tests {
 
     #[test]
     fn parse_infix_expression() {
-        let lexer = lexer::Lexer::new(String::from("5 + 5;  a + b * 6;"));
+        let lexer = lexer::Lexer::new(String::from(
+            "5 + 5
+             a + b * 6",
+        ));
         let mut parser = Parser::new(lexer);
         parser.read();
         parser.read();
@@ -464,7 +575,7 @@ mod tests {
             },
         ]);
 
-        assert_eq!(program, expected_program)
+        p_assert_eq!(program, expected_program)
     }
 
     #[test]
@@ -502,7 +613,7 @@ mod tests {
     }
 
     #[test]
-    fn parser_let_test() {
+    fn parse_let() {
         let lexer = lexer::Lexer::new(String::from("let hello = 123"));
         let mut parser = Parser::new(lexer);
         parser.read();
@@ -517,8 +628,24 @@ mod tests {
         assert_eq!(program, expected_program);
     }
 
+    // #[test]
+    // fn parse_let_string() {
+    //     let lexer = lexer::Lexer::new(String::from("let hello = \"Hello World \""));
+    //     let mut parser = Parser::new(lexer);
+    //     parser.read();
+    //     parser.read();
+    //     let program = parser.parse();
+    //
+    //     let expected_program: ast::Program = Vec::from([Statement::Let {
+    //         name: "hello".to_string(),
+    //         value: (Expression::Number(123.0)),
+    //     }]);
+    //
+    //     assert_eq!(program, expected_program);
+    // }
+
     #[test]
-    fn parse_return_test() {
+    fn parse_return() {
         let lexer = lexer::Lexer::new(String::from(
             "
                 return 123

@@ -46,6 +46,11 @@ pub enum Expression {
         Op: Op,
         Right: Box<Option<Expression>>,
     },
+    CallExpression {
+        Token: Token,
+        Function: Box<Expression>,
+        Arguments: Vec<Option<Expression>>,
+    },
 }
 
 #[allow(dead_code)]
@@ -67,6 +72,7 @@ impl Precedence {
             TokenType::Greater | TokenType::Less => Precedence::LessGreater,
             TokenType::Addition | TokenType::Minus => Precedence::Sum,
             TokenType::Division | TokenType::Star => Precedence::Product,
+            TokenType::LeftParen => Precedence::Call,
             _ => Precedence::Lowest,
         }
     }
@@ -92,6 +98,7 @@ pub enum Op {
     // Pow,
     // In,
     // NotIn,
+    Call,
 }
 
 impl Op {
@@ -109,6 +116,7 @@ impl Op {
             TokenType::Greater => Self::GreaterThan,
             TokenType::LessEqual => Self::LessThanOrEquals,
             TokenType::GreaterEqual => Self::GreaterThanOrEquals,
+            TokenType::LeftParen => Self::Call,
             _ => unreachable!("{:?}", token_type),
         }
     }
