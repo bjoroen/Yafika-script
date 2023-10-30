@@ -22,6 +22,7 @@ pub struct BlockStatment {
 #[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub enum Expression {
     Number(f64),
+    String(String),
     Indentifier(String),
     Boolean(bool),
     FunctionLiteral {

@@ -55,6 +55,7 @@ impl Parser {
                         value: expression,
                     })
                 } else {
+                    // Should result in error
                     None
                 }
             }
@@ -63,6 +64,7 @@ impl Parser {
                 if let Some(expression) = self.parse_expression(Precedence::Lowest) {
                     Some(Statement::Return { value: expression })
                 } else {
+                    // Should result in error
                     None
                 }
             }
@@ -82,6 +84,7 @@ impl Parser {
     pub fn parse_expression(&mut self, precedence: Precedence) -> Option<Expression> {
         let mut left = match self.current.clone().token_type {
             TokenType::Number => Expression::Number(self.current.literal.parse().unwrap()),
+            TokenType::String => Expression::String(self.current.literal.clone()),
             TokenType::Identifier => Expression::Indentifier(self.current.clone().literal),
             TokenType::Bool => Expression::Boolean(self.current.literal == "True".to_string()),
             TokenType::If => self.parse_if_expressions(),
@@ -628,21 +631,21 @@ mod tests {
         assert_eq!(program, expected_program);
     }
 
-    // #[test]
-    // fn parse_let_string() {
-    //     let lexer = lexer::Lexer::new(String::from("let hello = \"Hello World \""));
-    //     let mut parser = Parser::new(lexer);
-    //     parser.read();
-    //     parser.read();
-    //     let program = parser.parse();
-    //
-    //     let expected_program: ast::Program = Vec::from([Statement::Let {
-    //         name: "hello".to_string(),
-    //         value: (Expression::Number(123.0)),
-    //     }]);
-    //
-    //     assert_eq!(program, expected_program);
-    // }
+    #[test]
+    fn parse_let_string() {
+        let lexer = lexer::Lexer::new(String::from("let hello = \"Hello World\""));
+        let mut parser = Parser::new(lexer);
+        parser.read();
+        parser.read();
+        let program = parser.parse();
+
+        let expected_program: ast::Program = Vec::from([Statement::Let {
+            name: "hello".to_string(),
+            value: (Expression::String("Hello World".to_string())),
+        }]);
+
+        p_assert_eq!(program, expected_program);
+    }
 
     #[test]
     fn parse_return() {
