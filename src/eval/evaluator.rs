@@ -1,17 +1,17 @@
-use crate::ast;
+use crate::ast::{self, Expression, Node, Statement};
 
 use super::object;
 
-pub fn eval(node: ast::Node) -> object::Object {
+pub fn eval(node: Node) -> object::Object {
     match node {
-        ast::Node::Program(p) => eval_program(p),
-        ast::Node::Statment(s) => eval_statment(s),
-        ast::Node::Expression(e) => eval_expression(e),
-        ast::Node::BlockStatment(b) => eval_block_statment(b),
+        Node::Program(p) => eval_program(p),
+        Node::Statment(s) => eval_statment(s),
+        Node::Expression(e) => eval_expression(e),
+        Node::BlockStatment(b) => eval_block_statment(b),
     }
 }
 
-fn eval_program(p: Vec<ast::Statement>) -> object::Object {
+fn eval_program(p: Vec<Statement>) -> object::Object {
     let mut val: object::Object = object::Object::Nil;
     for statment in p {
         val = eval_statment(statment);
@@ -19,43 +19,19 @@ fn eval_program(p: Vec<ast::Statement>) -> object::Object {
     val
 }
 
-fn eval_statment(s: ast::Statement) -> object::Object {
+fn eval_statment(s: Statement) -> object::Object {
     match s {
-        ast::Statement::Let { name, value } => todo!(),
-        ast::Statement::Return { value } => todo!(),
-        ast::Statement::StatmentExpression { value } => eval_expression(value),
+        Statement::Let { name, value } => todo!(),
+        Statement::Return { value } => todo!(),
+        Statement::StatmentExpression { value } => eval_expression(value),
     }
 }
 
-fn eval_expression(e: ast::Expression) -> object::Object {
+fn eval_expression(e: Expression) -> object::Object {
     match e {
-        ast::Expression::Number(n) => object::Object::Integer(n),
-        ast::Expression::String(_) => todo!(),
-        ast::Expression::Indentifier(_) => todo!(),
-        ast::Expression::Boolean(_) => todo!(),
-        ast::Expression::FunctionLiteral {
-            Token,
-            Parameters,
-            Body,
-        } => todo!(),
-        ast::Expression::IfExpression {
-            Token,
-            Condition,
-            Consequence,
-            Alternative,
-        } => todo!(),
-        ast::Expression::PrefixExpression { Token, Op, Right } => todo!(),
-        ast::Expression::InfixExpression {
-            Token,
-            Left,
-            Op,
-            Right,
-        } => todo!(),
-        ast::Expression::CallExpression {
-            Token,
-            Function,
-            Arguments,
-        } => todo!(),
+        Expression::Number(n) => object::Object::Integer(n),
+        Expression::Boolean(b) => object::Object::Boolean(b),
+        _ => todo!(),
     }
 }
 
@@ -71,19 +47,35 @@ mod tests {
 
     use super::*;
 
+    fn test_eval(test_case: &[(&str, object::Object)]) {
+        for (input, expected) in test_case {
+            let lexer = lexer::Lexer::new(String::from(*input));
+            let mut parser = Parser::new(lexer);
+            parser.read();
+            parser.read();
+            let program = parser.parse();
+            assert_eq!(eval(ast::Node::Program(program)), *expected);
+        }
+    }
+
     #[test]
     fn evaluate_int_expression() {
-        let lexer = lexer::Lexer::new(String::from("5 "));
-        let mut parser = Parser::new(lexer);
-        parser.read();
-        parser.read();
-        let program = parser.parse();
+        let test_case = [
+            ("5 ", object::Object::Integer(5.00)),
+            ("231.00", object::Object::Integer(231.00)),
+            ("21232131.00", object::Object::Integer(21232131.00)),
+        ];
 
-        let vec_expression = vec![ast::Statement::StatmentExpression {
-            value: ast::Expression::Number(5.00),
-        }];
+        test_eval(&test_case)
+    }
 
-        assert_eq!(program, vec_expression);
-        assert_eq!(eval(ast::Node::Program(program)), Object::Integer(5.00))
+    #[test]
+    fn evaluate_boolean_expression() {
+        let test_case = [
+            ("True ", object::Object::Boolean(true)),
+            ("False ", object::Object::Boolean(false)),
+        ];
+
+        test_eval(&test_case)
     }
 }
