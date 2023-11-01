@@ -5,7 +5,6 @@ pub enum Node {
     Program(Program),
     Statment(Statement),
     Expression(Expression),
-    BlockStatment(BlockStatment),
 }
 
 #[derive(PartialEq, Debug, Clone, PartialOrd)]

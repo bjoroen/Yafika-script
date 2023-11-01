@@ -125,17 +125,12 @@ impl Lexer {
                 buffer.push(self.char);
                 self.read();
 
-                while !self.char.is_whitespace() && !self.char.is_alphanumeric() {
-                    buffer.push(self.char);
+                if self.source[self.current] == '=' {
                     self.read();
+                    Token::new(TokenType::BangEqual, "!=".to_owned())
+                } else {
+                    Token::new(TokenType::Bang, "!".to_owned())
                 }
-                let token_type: TokenType = match buffer.as_str() {
-                    "!" => TokenType::Bang,
-                    "!=" => TokenType::BangEqual,
-                    _ => unimplemented!(),
-                };
-
-                Token::new(token_type, buffer)
             }
             '(' => {
                 self.read();

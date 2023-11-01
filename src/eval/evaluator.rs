@@ -1,4 +1,7 @@
-use crate::ast::{self, Expression, Node, Statement};
+use crate::{
+    ast::{self, Expression, Node, Statement},
+    token::Token,
+};
 
 use super::object;
 
@@ -7,7 +10,6 @@ pub fn eval(node: Node) -> object::Object {
         Node::Program(p) => eval_program(p),
         Node::Statment(s) => eval_statment(s),
         Node::Expression(e) => eval_expression(e),
-        Node::BlockStatment(b) => eval_block_statment(b),
     }
 }
 
@@ -31,18 +33,41 @@ fn eval_expression(e: Expression) -> object::Object {
     match e {
         Expression::Number(n) => object::Object::Integer(n),
         Expression::Boolean(b) => object::Object::Boolean(b),
+        Expression::PrefixExpression {
+            Token: _,
+            Op,
+            Right,
+        } => {
+            let right = eval_expression(Right.expect("eval prefix"));
+            eval_prefix(Op, right)
+        }
         _ => todo!(),
     }
 }
 
-fn eval_block_statment(b: ast::BlockStatment) -> object::Object {
+fn eval_prefix(op: ast::Op, right: object::Object) -> object::Object {
+    match op {
+        ast::Op::Bang => eval_bang_prefix(right),
+        ast::Op::Subtract => eval_sub_prefix(right),
+        _ => object::Object::Nil,
+    }
+}
+
+fn eval_sub_prefix(right: object::Object) -> object::Object {
     todo!()
+}
+
+fn eval_bang_prefix(right: object::Object) -> object::Object {
+    match right {
+        object::Object::Nil => object::Object::Boolean(true),
+        object::Object::Boolean(b) => object::Object::Boolean(!b),
+        _ => object::Object::Boolean(false),
+    }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::eval::object::Object;
     use crate::{lexer, Parser};
 
     use super::*;
@@ -59,11 +84,14 @@ mod tests {
     }
 
     #[test]
-    fn evaluate_int_expression() {
+    fn evaluate_prefix_expression() {
         let test_case = [
-            ("5 ", object::Object::Integer(5.00)),
-            ("231.00", object::Object::Integer(231.00)),
-            ("21232131.00", object::Object::Integer(21232131.00)),
+            ("!True ", object::Object::Boolean(false)),
+            ("!False ", object::Object::Boolean(true)),
+            ("!5 ", object::Object::Boolean(false)),
+            ("!!True ", object::Object::Boolean(true)),
+            ("!!False ", object::Object::Boolean(false)),
+            ("!!5 ", object::Object::Boolean(true)),
         ];
 
         test_eval(&test_case)
@@ -74,6 +102,17 @@ mod tests {
         let test_case = [
             ("True ", object::Object::Boolean(true)),
             ("False ", object::Object::Boolean(false)),
+        ];
+
+        test_eval(&test_case)
+    }
+
+    #[test]
+    fn evaluate_int_expression() {
+        let test_case = [
+            ("5 ", object::Object::Integer(5.00)),
+            ("231.00", object::Object::Integer(231.00)),
+            ("21232131.00", object::Object::Integer(21232131.00)),
         ];
 
         test_eval(&test_case)
