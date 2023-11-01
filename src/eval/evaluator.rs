@@ -3,6 +3,9 @@ use crate::{
     token::Token,
 };
 
+#[cfg(test)]
+use pretty_assertions::assert_eq as p_assert_eq;
+
 use super::object;
 
 pub fn eval(node: Node) -> object::Object {
@@ -79,7 +82,7 @@ mod tests {
             parser.read();
             parser.read();
             let program = parser.parse();
-            assert_eq!(eval(ast::Node::Program(program)), *expected);
+            p_assert_eq!(eval(ast::Node::Program(program)), *expected);
         }
     }
 

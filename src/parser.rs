@@ -289,11 +289,6 @@ impl Parser {
         Precedence::get_precedence(&self.peek.token_type)
     }
 
-    /// Looks at the precedence of the current token type
-    fn current_precedence(&self) -> Precedence {
-        Precedence::get_precedence(&self.current.token_type)
-    }
-
     /// Given a token token type, returns a bool depending if the next token type is of that type
     fn peek_token_is(&mut self, t: TokenType) -> bool {
         if self.peek.token_type == t {
@@ -447,7 +442,7 @@ mod tests {
             },
         }]);
 
-        assert_eq!(program, expected_program)
+        p_assert_eq!(program, expected_program);
     }
 
     #[test]
@@ -490,7 +485,7 @@ mod tests {
             },
         }]);
 
-        assert_eq!(program, expected_program)
+        p_assert_eq!(program, expected_program);
     }
 
     #[test]
@@ -531,7 +526,7 @@ mod tests {
             },
         }]);
 
-        assert_eq!(program, expected_program)
+        p_assert_eq!(program, expected_program);
     }
 
     #[test]
@@ -612,7 +607,7 @@ mod tests {
             },
         ]);
 
-        assert_eq!(program, expected_program);
+        p_assert_eq!(program, expected_program);
     }
 
     #[test]
@@ -628,7 +623,7 @@ mod tests {
             value: (Expression::Number(123.0)),
         }]);
 
-        assert_eq!(program, expected_program);
+        p_assert_eq!(program, expected_program);
     }
 
     #[test]
@@ -672,6 +667,6 @@ mod tests {
             },
         ]);
 
-        assert_eq!(program, expected_program)
+        p_assert_eq!(program, expected_program);
     }
 }
