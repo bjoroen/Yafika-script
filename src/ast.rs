@@ -1,8 +1,11 @@
 use crate::token::{Token, TokenType};
 
 #[derive(PartialEq, Debug)]
-pub struct Node {
-    token: Token,
+pub enum Node {
+    Program(Program),
+    Statment(Statement),
+    Expression(Expression),
+    BlockStatment(BlockStatment),
 }
 
 #[derive(PartialEq, Debug, Clone, PartialOrd)]

@@ -1,5 +1,6 @@
 use parser::Parser;
 
+use crate::eval::evaluator;
 use crate::lexer::Lexer;
 use std::env;
 use std::fs;
@@ -33,7 +34,8 @@ fn main() {
         pars.read();
         pars.read();
         let program = pars.parse();
-        dbg!(program);
+        let evaluation = evaluator::eval(ast::Node::Program(program));
+        dbg!(&evaluation);
     }
 
     if env::args().len() == 1 {

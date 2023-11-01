@@ -2,4 +2,4 @@
 
 cargo build
 
-rust-gdb --args target/debug/yafika hello_world.yaf
+rust-gdb --args target/debug/yafika-script hello_world.yaf
