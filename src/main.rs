@@ -34,7 +34,8 @@ fn main() {
         pars.read();
         pars.read();
         let program = pars.parse();
-        let evaluation = evaluator::eval(ast::Node::Program(program));
+        let evaluation = evaluator::eval(ast::Node::Program(program.clone()));
+        dbg!(&program);
         dbg!(&evaluation);
     }
 

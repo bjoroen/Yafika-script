@@ -29,7 +29,6 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Program {
-        dbg!(&self.lexer.tokens);
         let mut program: Program = Vec::new();
 
         while let Some(statement) = self.next() {

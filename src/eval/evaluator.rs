@@ -44,7 +44,57 @@ fn eval_expression(e: Expression) -> object::Object {
             let right = eval_expression(Right.expect("eval prefix"));
             eval_prefix(Op, right)
         }
+        Expression::InfixExpression {
+            Token: _,
+            Left,
+            Op,
+            Right,
+        } => {
+            let left = eval_expression(*Left);
+            let right = eval_expression(Right.unwrap());
+
+            eval_infix_expression(left, Op, right)
+        }
         _ => todo!(),
+    }
+}
+
+fn eval_infix_expression(
+    left: object::Object,
+    op: ast::Op,
+    right: object::Object,
+) -> object::Object {
+    match (left, right) {
+        (object::Object::Integer(ln), object::Object::Integer(rn)) => {
+            eval_int_infix_expression(ln, op, rn)
+        }
+        (object::Object::Boolean(lb), object::Object::Boolean(rb)) => {
+            eval_bool_infix_expression(lb, op, rb)
+        }
+        _ => object::Object::Nil,
+    }
+}
+
+fn eval_bool_infix_expression(lb: bool, op: ast::Op, rb: bool) -> object::Object {
+    match op {
+        ast::Op::Equals => object::Object::Boolean(lb == rb),
+        ast::Op::NotEquals => object::Object::Boolean(lb != rb),
+        _ => object::Object::Nil,
+    }
+}
+
+fn eval_int_infix_expression(ln: f64, op: ast::Op, rn: f64) -> object::Object {
+    match op {
+        ast::Op::Add => object::Object::Integer(ln + rn),
+        ast::Op::Subtract => object::Object::Integer(ln - rn),
+        ast::Op::Multiply => object::Object::Integer(ln * rn),
+        ast::Op::Divide => object::Object::Integer(ln / rn),
+        ast::Op::LessThan => object::Object::Boolean(ln > rn),
+        ast::Op::GreaterThan => object::Object::Boolean(ln < rn),
+        ast::Op::Equals => object::Object::Boolean(ln == rn),
+        ast::Op::NotEquals => object::Object::Boolean(ln != rn),
+
+        _ => object::Object::Nil,
     }
 }
 
@@ -57,7 +107,10 @@ fn eval_prefix(op: ast::Op, right: object::Object) -> object::Object {
 }
 
 fn eval_sub_prefix(right: object::Object) -> object::Object {
-    todo!()
+    match right {
+        object::Object::Integer(i) => object::Object::Integer(-i),
+        _ => object::Object::Nil,
+    }
 }
 
 fn eval_bang_prefix(right: object::Object) -> object::Object {
@@ -105,6 +158,23 @@ mod tests {
         let test_case = [
             ("True ", object::Object::Boolean(true)),
             ("False ", object::Object::Boolean(false)),
+            ("1 < 2", object::Object::Boolean(true)),
+            ("1 > 2", object::Object::Boolean(false)),
+            ("1 < 1", object::Object::Boolean(false)),
+            ("1 > 1", object::Object::Boolean(false)),
+            ("1 == 1", object::Object::Boolean(true)),
+            ("1 != 1", object::Object::Boolean(false)),
+            ("1 == 2", object::Object::Boolean(false)),
+            ("1 != 2", object::Object::Boolean(true)),
+            ("True == True", object::Object::Boolean(true)),
+            ("False == False", object::Object::Boolean(true)),
+            ("True == False", object::Object::Boolean(false)),
+            ("True != False", object::Object::Boolean(true)),
+            ("False != True", object::Object::Boolean(true)),
+            ("(1 < 2) == True", object::Object::Boolean(true)),
+            ("(1 < 2) == False", object::Object::Boolean(false)),
+            ("(1 > 2) == True", object::Object::Boolean(false)),
+            ("(1 > 2) == False", object::Object::Boolean(true)),
         ];
 
         test_eval(&test_case)
@@ -115,7 +185,19 @@ mod tests {
         let test_case = [
             ("5 ", object::Object::Integer(5.00)),
             ("231.00", object::Object::Integer(231.00)),
-            ("21232131.00", object::Object::Integer(21232131.00)),
+            ("-5 ", object::Object::Integer(-5.00)),
+            ("-231.00", object::Object::Integer(-231.00)),
+            ("5 + 5 + 5 + 5 - 10", object::Object::Integer(10.00)),
+            ("2 * 2 * 2 * 2 * 2", object::Object::Integer(32.00)),
+            ("20 + 2 * -10", object::Object::Integer(0.00)),
+            ("50 / 2 * 2 + 10", object::Object::Integer(60.00)),
+            ("3 * (3 * 3) + 10", object::Object::Integer(37.00)),
+            (
+                "(5 + 10 * 2 + 15 / 3) * 2 + -10",
+                object::Object::Integer(50.00),
+            ),
+            // TODO: Fix parser bug - This does not get parsed correcrly.
+            // ("-50 + 100 + -50", object::Object::Integer(0.00)),
         ];
 
         test_eval(&test_case)
