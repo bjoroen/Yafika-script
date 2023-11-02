@@ -35,8 +35,7 @@ fn main() {
         pars.read();
         let program = pars.parse();
         let evaluation = evaluator::eval(ast::Node::Program(program.clone()));
-        dbg!(&program);
-        dbg!(&evaluation);
+        println!("{}", evaluation.to_string())
     }
 
     if env::args().len() == 1 {

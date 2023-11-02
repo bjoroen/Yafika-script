@@ -1,7 +1,4 @@
-use crate::{
-    ast::{self, Expression, Node, Statement},
-    token::Token,
-};
+use crate::ast::{self, Expression, Node, Statement};
 
 #[cfg(test)]
 use pretty_assertions::assert_eq as p_assert_eq;
@@ -137,6 +134,27 @@ mod tests {
             let program = parser.parse();
             p_assert_eq!(eval(ast::Node::Program(program)), *expected);
         }
+    }
+
+    #[test]
+    fn evaluate_ifelse_expression() {
+        let test_case = [
+            ("if (True) {10}", object::Object::Integer(10.00)),
+            ("if (false) {10}", object::Object::Nil),
+            ("if (1) {10}", object::Object::Integer(10.00)),
+            ("if (1 < 2) { 10 }", object::Object::Integer(10.00)),
+            ("if (1 > 2) { 10 }", object::Object::Nil),
+            (
+                "if (1 > 2) { 10 } else { 20 }",
+                object::Object::Integer(20.00),
+            ),
+            (
+                "if (1 < 2) { 10 } else { 20 }",
+                object::Object::Integer(10.00),
+            ),
+        ];
+
+        test_eval(&test_case)
     }
 
     #[test]
