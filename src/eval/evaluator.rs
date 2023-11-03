@@ -10,6 +10,7 @@ pub fn eval(node: Node) -> object::Object {
         Node::Program(p) => eval_program(p),
         Node::Statment(s) => eval_statment(s),
         Node::Expression(e) => eval_expression(e),
+        Node::BlockStatment(b) => eval_program(b.Statement),
     }
 }
 
@@ -23,8 +24,8 @@ fn eval_program(p: Vec<Statement>) -> object::Object {
 
 fn eval_statment(s: Statement) -> object::Object {
     match s {
-        Statement::Let { name, value } => todo!(),
-        Statement::Return { value } => todo!(),
+        Statement::Let { name: _, value: _ } => todo!(),
+        Statement::Return { value: _ } => todo!(),
         Statement::StatmentExpression { value } => eval_expression(value),
     }
 }
@@ -52,7 +53,42 @@ fn eval_expression(e: Expression) -> object::Object {
 
             eval_infix_expression(left, Op, right)
         }
+        Expression::IfExpression {
+            Token: _,
+            Condition,
+            Consequence,
+            Alternative,
+        } => eval_ifelse_expression(Condition, Consequence, Alternative),
         _ => todo!(),
+    }
+}
+
+fn eval_ifelse_expression(
+    condition: Box<Expression>,
+    consequence: ast::BlockStatment,
+    alternative: Option<ast::BlockStatment>,
+) -> object::Object {
+    let con = eval_expression(*condition);
+
+    if let Some(exp) = is_truthy(con) {
+        match exp {
+            true => eval(ast::Node::BlockStatment(consequence)),
+            false => match alternative {
+                Some(v) => eval(ast::Node::BlockStatment(v)),
+                None => object::Object::Nil,
+            },
+        }
+    } else {
+        object::Object::Nil
+    }
+}
+
+fn is_truthy(obj: object::Object) -> Option<bool> {
+    match obj {
+        object::Object::Boolean(true) => Some(true),
+        object::Object::Boolean(false) => Some(false),
+        object::Object::Nil => Some(false),
+        _ => Some(true),
     }
 }
 
@@ -139,9 +175,9 @@ mod tests {
     #[test]
     fn evaluate_ifelse_expression() {
         let test_case = [
-            ("if (True) {10}", object::Object::Integer(10.00)),
-            ("if (false) {10}", object::Object::Nil),
-            ("if (1) {10}", object::Object::Integer(10.00)),
+            ("if ( True ) { 10 }", object::Object::Integer(10.00)),
+            ("if ( False ) { 10 }", object::Object::Nil),
+            ("if (1) { 10 }", object::Object::Integer(10.00)),
             ("if (1 < 2) { 10 }", object::Object::Integer(10.00)),
             ("if (1 > 2) { 10 }", object::Object::Nil),
             (
