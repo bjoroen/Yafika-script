@@ -8,24 +8,31 @@ use super::object;
 pub fn eval(node: Node) -> object::Object {
     match node {
         Node::Program(p) => eval_program(p),
+        Node::BlockStatment(b) => eval_program(b.Statement),
         Node::Statment(s) => eval_statment(s),
         Node::Expression(e) => eval_expression(e),
-        Node::BlockStatment(b) => eval_program(b.Statement),
     }
 }
 
 fn eval_program(p: Vec<Statement>) -> object::Object {
-    let mut val: object::Object = object::Object::Nil;
+    let mut result: object::Object = object::Object::Nil;
     for statment in p {
-        val = eval_statment(statment);
+        let stmt = eval_statment(statment);
+        match stmt {
+            object::Object::Return(_) => return stmt,
+            _ => result = stmt,
+        };
     }
-    val
+    return result;
 }
 
 fn eval_statment(s: Statement) -> object::Object {
     match s {
         Statement::Let { name: _, value: _ } => todo!(),
-        Statement::Return { value: _ } => todo!(),
+        Statement::Return { value: v } => {
+            let value = eval_expression(v);
+            object::Object::Return(Box::new(value))
+        }
         Statement::StatmentExpression { value } => eval_expression(value),
     }
 }
@@ -70,6 +77,7 @@ fn eval_ifelse_expression(
 ) -> object::Object {
     let con = eval_expression(*condition);
 
+    // TODO: Refactor this solution
     if let Some(exp) = is_truthy(con) {
         match exp {
             true => eval(ast::Node::BlockStatment(consequence)),
@@ -157,11 +165,11 @@ fn eval_bang_prefix(right: object::Object) -> object::Object {
 #[cfg(test)]
 mod tests {
 
-    use crate::{lexer, Parser};
+    use crate::{eval::object::Object, lexer, Parser};
 
     use super::*;
 
-    fn test_eval(test_case: &[(&str, object::Object)]) {
+    fn test_eval(test_case: &[(&str, Object)]) {
         for (input, expected) in test_case {
             let lexer = lexer::Lexer::new(String::from(*input));
             let mut parser = Parser::new(lexer);
@@ -173,21 +181,48 @@ mod tests {
     }
 
     #[test]
+    fn evaluate_return_statments() {
+        let test_case = [
+            (
+                "return 10;",
+                Object::Return(Box::new(Object::Integer(10.00))),
+            ),
+            (
+                "return 10; 9:",
+                Object::Return(Box::new(Object::Integer(10.00))),
+            ),
+            (
+                "return 2 * 5; 9:",
+                Object::Return(Box::new(Object::Integer(10.00))),
+            ),
+            (
+                "9 return 2 * 5; 9:",
+                Object::Return(Box::new(Object::Integer(10.00))),
+            ),
+            (
+                "if (10 > 1) {
+                    if (10 > 1) {
+                        return 10;
+                    }
+                    return 1;
+                }",
+                Object::Return(Box::new(Object::Integer(10.00))),
+            ),
+        ];
+
+        test_eval(&test_case)
+    }
+
+    #[test]
     fn evaluate_ifelse_expression() {
         let test_case = [
-            ("if ( True ) { 10 }", object::Object::Integer(10.00)),
-            ("if ( False ) { 10 }", object::Object::Nil),
-            ("if (1) { 10 }", object::Object::Integer(10.00)),
-            ("if (1 < 2) { 10 }", object::Object::Integer(10.00)),
-            ("if (1 > 2) { 10 }", object::Object::Nil),
-            (
-                "if (1 > 2) { 10 } else { 20 }",
-                object::Object::Integer(20.00),
-            ),
-            (
-                "if (1 < 2) { 10 } else { 20 }",
-                object::Object::Integer(10.00),
-            ),
+            ("if ( True ) { 10 }", Object::Integer(10.00)),
+            ("if ( False ) { 10 }", Object::Nil),
+            ("if (1) { 10 }", Object::Integer(10.00)),
+            ("if (1 < 2) { 10 }", Object::Integer(10.00)),
+            ("if (1 > 2) { 10 }", Object::Nil),
+            ("if (1 > 2) { 10 } else { 20 }", Object::Integer(20.00)),
+            ("if (1 < 2) { 10 } else { 20 }", Object::Integer(10.00)),
         ];
 
         test_eval(&test_case)
@@ -196,12 +231,12 @@ mod tests {
     #[test]
     fn evaluate_prefix_expression() {
         let test_case = [
-            ("!True ", object::Object::Boolean(false)),
-            ("!False ", object::Object::Boolean(true)),
-            ("!5 ", object::Object::Boolean(false)),
-            ("!!True ", object::Object::Boolean(true)),
-            ("!!False ", object::Object::Boolean(false)),
-            ("!!5 ", object::Object::Boolean(true)),
+            ("!True ", Object::Boolean(false)),
+            ("!False ", Object::Boolean(true)),
+            ("!5 ", Object::Boolean(false)),
+            ("!!True ", Object::Boolean(true)),
+            ("!!False ", Object::Boolean(false)),
+            ("!!5 ", Object::Boolean(true)),
         ];
 
         test_eval(&test_case)
@@ -210,25 +245,25 @@ mod tests {
     #[test]
     fn evaluate_boolean_expression() {
         let test_case = [
-            ("True ", object::Object::Boolean(true)),
-            ("False ", object::Object::Boolean(false)),
-            ("1 < 2", object::Object::Boolean(true)),
-            ("1 > 2", object::Object::Boolean(false)),
-            ("1 < 1", object::Object::Boolean(false)),
-            ("1 > 1", object::Object::Boolean(false)),
-            ("1 == 1", object::Object::Boolean(true)),
-            ("1 != 1", object::Object::Boolean(false)),
-            ("1 == 2", object::Object::Boolean(false)),
-            ("1 != 2", object::Object::Boolean(true)),
-            ("True == True", object::Object::Boolean(true)),
-            ("False == False", object::Object::Boolean(true)),
-            ("True == False", object::Object::Boolean(false)),
-            ("True != False", object::Object::Boolean(true)),
-            ("False != True", object::Object::Boolean(true)),
-            ("(1 < 2) == True", object::Object::Boolean(true)),
-            ("(1 < 2) == False", object::Object::Boolean(false)),
-            ("(1 > 2) == True", object::Object::Boolean(false)),
-            ("(1 > 2) == False", object::Object::Boolean(true)),
+            ("True ", Object::Boolean(true)),
+            ("False ", Object::Boolean(false)),
+            ("1 < 2", Object::Boolean(true)),
+            ("1 > 2", Object::Boolean(false)),
+            ("1 < 1", Object::Boolean(false)),
+            ("1 > 1", Object::Boolean(false)),
+            ("1 == 1", Object::Boolean(true)),
+            ("1 != 1", Object::Boolean(false)),
+            ("1 == 2", Object::Boolean(false)),
+            ("1 != 2", Object::Boolean(true)),
+            ("True == True", Object::Boolean(true)),
+            ("False == False", Object::Boolean(true)),
+            ("True == False", Object::Boolean(false)),
+            ("True != False", Object::Boolean(true)),
+            ("False != True", Object::Boolean(true)),
+            ("(1 < 2) == True", Object::Boolean(true)),
+            ("(1 < 2) == False", Object::Boolean(false)),
+            ("(1 > 2) == True", Object::Boolean(false)),
+            ("(1 > 2) == False", Object::Boolean(true)),
         ];
 
         test_eval(&test_case)
@@ -237,19 +272,16 @@ mod tests {
     #[test]
     fn evaluate_int_expression() {
         let test_case = [
-            ("5 ", object::Object::Integer(5.00)),
-            ("231.00", object::Object::Integer(231.00)),
-            ("-5 ", object::Object::Integer(-5.00)),
-            ("-231.00", object::Object::Integer(-231.00)),
-            ("5 + 5 + 5 + 5 - 10", object::Object::Integer(10.00)),
-            ("2 * 2 * 2 * 2 * 2", object::Object::Integer(32.00)),
-            ("20 + 2 * -10", object::Object::Integer(0.00)),
-            ("50 / 2 * 2 + 10", object::Object::Integer(60.00)),
-            ("3 * (3 * 3) + 10", object::Object::Integer(37.00)),
-            (
-                "(5 + 10 * 2 + 15 / 3) * 2 + -10",
-                object::Object::Integer(50.00),
-            ),
+            ("5 ", Object::Integer(5.00)),
+            ("231.00", Object::Integer(231.00)),
+            ("-5 ", Object::Integer(-5.00)),
+            ("-231.00", Object::Integer(-231.00)),
+            ("5 + 5 + 5 + 5 - 10", Object::Integer(10.00)),
+            ("2 * 2 * 2 * 2 * 2", Object::Integer(32.00)),
+            ("20 + 2 * -10", Object::Integer(0.00)),
+            ("50 / 2 * 2 + 10", Object::Integer(60.00)),
+            ("3 * (3 * 3) + 10", Object::Integer(37.00)),
+            ("(5 + 10 * 2 + 15 / 3) * 2 + -10", Object::Integer(50.00)),
             // TODO: Fix parser bug - This does not get parsed correcrly.
             // ("-50 + 100 + -50", object::Object::Integer(0.00)),
         ];
