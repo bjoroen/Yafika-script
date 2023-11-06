@@ -130,19 +130,19 @@ impl Op {
 impl Display for Op {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Op::Add => write!(f, "{}", self),
-            Op::Subtract => write!(f, "{}", self),
-            Op::Multiply => write!(f, "{}", self),
-            Op::Divide => write!(f, "{}", self),
-            Op::Bang => write!(f, "{}", self),
-            Op::Equals => write!(f, "{}", self),
-            Op::NotEquals => write!(f, "{}", self),
-            Op::Assign => write!(f, "{}", self),
-            Op::LessThan => write!(f, "{}", self),
-            Op::GreaterThan => write!(f, "{}", self),
-            Op::LessThanOrEquals => write!(f, "{}", self),
-            Op::GreaterThanOrEquals => write!(f, "{}", self),
-            Op::Call => write!(f, "{}", self),
+            Op::Add => write!(f, "+"),
+            Op::Subtract => write!(f, "-"),
+            Op::Multiply => write!(f, "*"),
+            Op::Divide => write!(f, "/"),
+            Op::Bang => write!(f, "!"),
+            Op::Equals => write!(f, "="),
+            Op::NotEquals => write!(f, "!="),
+            Op::Assign => write!(f, "="),
+            Op::LessThan => write!(f, "<"),
+            Op::GreaterThan => write!(f, ">"),
+            Op::LessThanOrEquals => write!(f, "<="),
+            Op::GreaterThanOrEquals => write!(f, ">="),
+            Op::Call => write!(f, "()"),
         }
     }
 }

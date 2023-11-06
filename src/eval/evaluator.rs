@@ -17,11 +17,13 @@ pub fn eval(node: Node) -> Result<Object, EvalError> {
 fn eval_program(p: Vec<Statement>) -> Result<Object, EvalError> {
     let mut result: object::Object = object::Object::Nil;
     for statment in p {
-        let stmt = eval_statment(statment)?;
+        let stmt = eval_statment(statment);
         match stmt {
-            Object::Return(_) => return Ok(stmt),
-            Object::Error(_) => return Ok(stmt),
-            _ => result = stmt,
+            Ok(s) => match s {
+                Object::Return(_) => return Ok(s),
+                _ => result = s,
+            },
+            Err(e) => return Err(e),
         };
     }
     return Ok(result);
@@ -109,7 +111,7 @@ fn eval_infix_expression(
         (object::Object::Boolean(lb), object::Object::Boolean(rb)) => {
             eval_bool_infix_expression(lb, op, rb)
         }
-        _ => Err(format!("type mismatch: {} {} {}", &left, op, &right)),
+        _ => Err(format!("type mismatch: {} {} {}", left, op, right)),
     }
 }
 
@@ -117,7 +119,7 @@ fn eval_bool_infix_expression(lb: &bool, op: ast::Op, rb: &bool) -> Result<Objec
     match op {
         Op::Equals => Ok(Object::Boolean(lb == rb)),
         Op::NotEquals => Ok(Object::Boolean(lb != rb)),
-        _ => Err(format!("unknwon operation: {} {} {}", lb, op, rb)),
+        _ => Err(format!("unknown operator: {} {} {}", lb, op, rb)),
     }
 }
 
@@ -186,27 +188,27 @@ mod tests {
         let test_case = [
             (
                 "5 + True",
-                Object::Error("type mismatch: INT + BOOLEAN".to_string()),
+                Object::Error("type mismatch: 5 + true".to_string()),
             ),
             (
                 "5 + True; 5;",
-                Object::Error("type mismatch: INT + BOOLEAN".to_string()),
+                Object::Error("type mismatch: 5 + true".to_string()),
             ),
             (
                 "-True",
-                Object::Error("Unknown operator: -BOOLEAN".to_string()),
+                Object::Error("unknown operator: -true".to_string()),
             ),
             (
                 "True + False",
-                Object::Error("unknown operator: BOOLEAN + BOOLEAN".to_string()),
+                Object::Error("unknown operator: true + false".to_string()),
             ),
             (
                 "5; True + False; 5",
-                Object::Error("unknown operator: BOOLEAN + BOOLEAN".to_string()),
+                Object::Error("unknown operator: true + false".to_string()),
             ),
             (
                 "if (10 > 5) { True + False }",
-                Object::Error("unknown operator: BOOLEAN + BOOLEAN".to_string()),
+                Object::Error("unknown operator: true + false".to_string()),
             ),
         ];
 
