@@ -1,4 +1,5 @@
 use crate::token::{Token, TokenType};
+use std::fmt::Display;
 
 #[derive(PartialEq, Debug)]
 pub enum Node {
@@ -122,6 +123,26 @@ impl Op {
             TokenType::GreaterEqual => Self::GreaterThanOrEquals,
             TokenType::LeftParen => Self::Call,
             _ => unreachable!("{:?}", token_type),
+        }
+    }
+}
+
+impl Display for Op {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Op::Add => write!(f, "{}", self),
+            Op::Subtract => write!(f, "{}", self),
+            Op::Multiply => write!(f, "{}", self),
+            Op::Divide => write!(f, "{}", self),
+            Op::Bang => write!(f, "{}", self),
+            Op::Equals => write!(f, "{}", self),
+            Op::NotEquals => write!(f, "{}", self),
+            Op::Assign => write!(f, "{}", self),
+            Op::LessThan => write!(f, "{}", self),
+            Op::GreaterThan => write!(f, "{}", self),
+            Op::LessThanOrEquals => write!(f, "{}", self),
+            Op::GreaterThanOrEquals => write!(f, "{}", self),
+            Op::Call => write!(f, "{}", self),
         }
     }
 }

@@ -1,11 +1,11 @@
-use crate::ast::{self, Expression, Node, Statement};
+use crate::ast::{self, Expression, Node, Op, Statement};
 
 #[cfg(test)]
 use pretty_assertions::assert_eq as p_assert_eq;
 
-use super::object;
+use super::object::{self, EvalError, Object};
 
-pub fn eval(node: Node) -> object::Object {
+pub fn eval(node: Node) -> Result<Object, EvalError> {
     match node {
         Node::Program(p) => eval_program(p),
         Node::BlockStatment(b) => eval_program(b.Statement),
@@ -14,39 +14,40 @@ pub fn eval(node: Node) -> object::Object {
     }
 }
 
-fn eval_program(p: Vec<Statement>) -> object::Object {
+fn eval_program(p: Vec<Statement>) -> Result<Object, EvalError> {
     let mut result: object::Object = object::Object::Nil;
     for statment in p {
-        let stmt = eval_statment(statment);
+        let stmt = eval_statment(statment)?;
         match stmt {
-            object::Object::Return(_) => return stmt,
+            Object::Return(_) => return Ok(stmt),
+            Object::Error(_) => return Ok(stmt),
             _ => result = stmt,
         };
     }
-    return result;
+    return Ok(result);
 }
 
-fn eval_statment(s: Statement) -> object::Object {
+fn eval_statment(s: Statement) -> Result<Object, EvalError> {
     match s {
         Statement::Let { name: _, value: _ } => todo!(),
         Statement::Return { value: v } => {
-            let value = eval_expression(v);
-            object::Object::Return(Box::new(value))
+            let value = eval_expression(v)?;
+            return Ok(object::Object::Return(Box::new(value)));
         }
         Statement::StatmentExpression { value } => eval_expression(value),
     }
 }
 
-fn eval_expression(e: Expression) -> object::Object {
+fn eval_expression(e: Expression) -> Result<Object, EvalError> {
     match e {
-        Expression::Number(n) => object::Object::Integer(n),
-        Expression::Boolean(b) => object::Object::Boolean(b),
+        Expression::Number(n) => Ok(Object::Integer(n)),
+        Expression::Boolean(b) => Ok(Object::Boolean(b)),
         Expression::PrefixExpression {
             Token: _,
             Op,
             Right,
         } => {
-            let right = eval_expression(Right.expect("eval prefix"));
+            let right = eval_expression(Right.expect("eval prefix"))?;
             eval_prefix(Op, right)
         }
         Expression::InfixExpression {
@@ -55,8 +56,8 @@ fn eval_expression(e: Expression) -> object::Object {
             Op,
             Right,
         } => {
-            let left = eval_expression(*Left);
-            let right = eval_expression(Right.unwrap());
+            let left = eval_expression(*Left)?;
+            let right = eval_expression(Right.unwrap())?;
 
             eval_infix_expression(left, Op, right)
         }
@@ -74,29 +75,25 @@ fn eval_ifelse_expression(
     condition: Box<Expression>,
     consequence: ast::BlockStatment,
     alternative: Option<ast::BlockStatment>,
-) -> object::Object {
-    let con = eval_expression(*condition);
+) -> Result<Object, EvalError> {
+    let con = eval_expression(*condition)?;
 
     // TODO: Refactor this solution
-    if let Some(exp) = is_truthy(con) {
-        match exp {
-            true => eval(ast::Node::BlockStatment(consequence)),
-            false => match alternative {
-                Some(v) => eval(ast::Node::BlockStatment(v)),
-                None => object::Object::Nil,
-            },
-        }
+    if is_truthy(con) {
+        eval(ast::Node::BlockStatment(consequence))
     } else {
-        object::Object::Nil
+        match alternative {
+            Some(v) => eval(ast::Node::BlockStatment(v)),
+            None => Ok(Object::Nil),
+        }
     }
 }
 
-fn is_truthy(obj: object::Object) -> Option<bool> {
+fn is_truthy(obj: object::Object) -> bool {
     match obj {
-        object::Object::Boolean(true) => Some(true),
-        object::Object::Boolean(false) => Some(false),
-        object::Object::Nil => Some(false),
-        _ => Some(true),
+        object::Object::Nil => return false,
+        object::Object::Boolean(false) => return false,
+        _ => true,
     }
 }
 
@@ -104,61 +101,61 @@ fn eval_infix_expression(
     left: object::Object,
     op: ast::Op,
     right: object::Object,
-) -> object::Object {
-    match (left, right) {
+) -> Result<Object, EvalError> {
+    match (&left, &right) {
         (object::Object::Integer(ln), object::Object::Integer(rn)) => {
             eval_int_infix_expression(ln, op, rn)
         }
         (object::Object::Boolean(lb), object::Object::Boolean(rb)) => {
             eval_bool_infix_expression(lb, op, rb)
         }
-        _ => object::Object::Nil,
+        _ => Err(format!("type mismatch: {} {} {}", &left, op, &right)),
     }
 }
 
-fn eval_bool_infix_expression(lb: bool, op: ast::Op, rb: bool) -> object::Object {
+fn eval_bool_infix_expression(lb: &bool, op: ast::Op, rb: &bool) -> Result<Object, EvalError> {
     match op {
-        ast::Op::Equals => object::Object::Boolean(lb == rb),
-        ast::Op::NotEquals => object::Object::Boolean(lb != rb),
-        _ => object::Object::Nil,
+        Op::Equals => Ok(Object::Boolean(lb == rb)),
+        Op::NotEquals => Ok(Object::Boolean(lb != rb)),
+        _ => Err(format!("unknwon operation: {} {} {}", lb, op, rb)),
     }
 }
 
-fn eval_int_infix_expression(ln: f64, op: ast::Op, rn: f64) -> object::Object {
+fn eval_int_infix_expression(ln: &f64, op: ast::Op, rn: &f64) -> Result<Object, EvalError> {
     match op {
-        ast::Op::Add => object::Object::Integer(ln + rn),
-        ast::Op::Subtract => object::Object::Integer(ln - rn),
-        ast::Op::Multiply => object::Object::Integer(ln * rn),
-        ast::Op::Divide => object::Object::Integer(ln / rn),
-        ast::Op::LessThan => object::Object::Boolean(ln > rn),
-        ast::Op::GreaterThan => object::Object::Boolean(ln < rn),
-        ast::Op::Equals => object::Object::Boolean(ln == rn),
-        ast::Op::NotEquals => object::Object::Boolean(ln != rn),
+        Op::Add => Ok(Object::Integer(ln + rn)),
+        Op::Subtract => Ok(Object::Integer(ln - rn)),
+        Op::Multiply => Ok(Object::Integer(ln * rn)),
+        Op::Divide => Ok(Object::Integer(ln / rn)),
+        Op::LessThan => Ok(Object::Boolean(ln > rn)),
+        Op::GreaterThan => Ok(Object::Boolean(ln < rn)),
+        Op::Equals => Ok(Object::Boolean(ln == rn)),
+        Op::NotEquals => Ok(Object::Boolean(ln != rn)),
 
-        _ => object::Object::Nil,
+        _ => Err(format!("type mismatch: {} {} {}", ln, op, rn)),
     }
 }
 
-fn eval_prefix(op: ast::Op, right: object::Object) -> object::Object {
+fn eval_prefix(op: ast::Op, right: object::Object) -> Result<object::Object, EvalError> {
     match op {
         ast::Op::Bang => eval_bang_prefix(right),
         ast::Op::Subtract => eval_sub_prefix(right),
-        _ => object::Object::Nil,
+        _ => Err(format!("unknown operator: {}{}", op, right)),
     }
 }
 
-fn eval_sub_prefix(right: object::Object) -> object::Object {
+fn eval_sub_prefix(right: Object) -> Result<Object, EvalError> {
     match right {
-        object::Object::Integer(i) => object::Object::Integer(-i),
-        _ => object::Object::Nil,
+        object::Object::Integer(i) => Ok(Object::Integer(-i)),
+        _ => Err(format!("unknown operator: -{}", right)),
     }
 }
 
-fn eval_bang_prefix(right: object::Object) -> object::Object {
+fn eval_bang_prefix(right: Object) -> Result<Object, EvalError> {
     match right {
-        object::Object::Nil => object::Object::Boolean(true),
-        object::Object::Boolean(b) => object::Object::Boolean(!b),
-        _ => object::Object::Boolean(false),
+        Object::Nil => Ok(Object::Boolean(true)),
+        Object::Boolean(b) => Ok(Object::Boolean(!b)),
+        _ => Ok(Object::Boolean(false)),
     }
 }
 
@@ -176,8 +173,44 @@ mod tests {
             parser.read();
             parser.read();
             let program = parser.parse();
-            p_assert_eq!(eval(ast::Node::Program(program)), *expected);
+
+            match eval(ast::Node::Program(program)) {
+                Ok(v) => p_assert_eq!(v, *expected),
+                Err(e) => p_assert_eq!(e, *expected.to_string()),
+            }
         }
+    }
+
+    #[test]
+    fn error_handling() {
+        let test_case = [
+            (
+                "5 + True",
+                Object::Error("type mismatch: INT + BOOLEAN".to_string()),
+            ),
+            (
+                "5 + True; 5;",
+                Object::Error("type mismatch: INT + BOOLEAN".to_string()),
+            ),
+            (
+                "-True",
+                Object::Error("Unknown operator: -BOOLEAN".to_string()),
+            ),
+            (
+                "True + False",
+                Object::Error("unknown operator: BOOLEAN + BOOLEAN".to_string()),
+            ),
+            (
+                "5; True + False; 5",
+                Object::Error("unknown operator: BOOLEAN + BOOLEAN".to_string()),
+            ),
+            (
+                "if (10 > 5) { True + False }",
+                Object::Error("unknown operator: BOOLEAN + BOOLEAN".to_string()),
+            ),
+        ];
+
+        test_eval(&test_case)
     }
 
     #[test]
