@@ -26,7 +26,7 @@ fn eval_program(p: Vec<Statement>) -> Result<Object, EvalError> {
             Err(e) => return Err(e),
         };
     }
-    return Ok(result);
+    Ok(result)
 }
 
 fn eval_statment(s: Statement) -> Result<Object, EvalError> {
@@ -203,7 +203,7 @@ mod tests {
                 Object::Error("unknown operator: true + false".to_string()),
             ),
             (
-                "5; True + False; 5",
+                "5 True + False 5",
                 Object::Error("unknown operator: true + false".to_string()),
             ),
             (
