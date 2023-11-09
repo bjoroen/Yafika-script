@@ -14,14 +14,14 @@ impl Parser {
     pub fn new(lexer: Lexer) -> Self {
         Self {
             lexer,
-            // Starting the parser with the peek token as EOF
-            peek: Token {
+            // Starting the parser with the current token as EOF
+            current: Token {
                 token_type: TokenType::EOF,
                 literal: "".to_string(),
             },
 
-            // Starting the parser with the current token as EOF
-            current: Token {
+            // Starting the parser with the peek token as EOF
+            peek: Token {
                 token_type: TokenType::EOF,
                 literal: "".to_string(),
             },
@@ -142,7 +142,7 @@ impl Parser {
             self.read();
             if let Some(ident_exp) = self.parse_expression(Precedence::Lowest) {
                 if !matches!(ident_exp, Expression::Indentifier(..)) {
-                    panic!("Didnt get identifier, got strange shit")
+                    panic!("Didnt get identifier")
                 }
 
                 identifiers.push(ident_exp)

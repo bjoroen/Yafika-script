@@ -111,7 +111,12 @@ fn eval_infix_expression(
         (object::Object::Boolean(lb), object::Object::Boolean(rb)) => {
             eval_bool_infix_expression(lb, op, rb)
         }
-        _ => Err(format!("type mismatch: {} {} {}", left, op, right)),
+        _ => Err(format!(
+            "type mismatch: {} {} {}",
+            left.type_info(),
+            op,
+            right.type_info()
+        )),
     }
 }
 
@@ -134,7 +139,7 @@ fn eval_int_infix_expression(ln: &f64, op: ast::Op, rn: &f64) -> Result<Object, 
         Op::Equals => Ok(Object::Boolean(ln == rn)),
         Op::NotEquals => Ok(Object::Boolean(ln != rn)),
 
-        _ => Err(format!("type mismatch: {} {} {}", ln, op, rn)),
+        _ => Err(format!("unknown operator: {}", op)),
     }
 }
 
@@ -188,11 +193,11 @@ mod tests {
         let test_case = [
             (
                 "5 + True",
-                Object::Error("type mismatch: 5 + true".to_string()),
+                Object::Error("type mismatch: INT + BOOLEAN".to_string()),
             ),
             (
                 "5 + True; 5;",
-                Object::Error("type mismatch: 5 + true".to_string()),
+                Object::Error("type mismatch: INT + BOOLEAN".to_string()),
             ),
             (
                 "-True",

@@ -22,3 +22,15 @@ impl Display for Object {
         }
     }
 }
+
+impl Object {
+    pub fn type_info(&self) -> String {
+        match self {
+            Object::Integer(_) => format!("INT"),
+            Object::Boolean(_) => format!("BOOLEAN"),
+            Object::Nil => format!("Nil"),
+            Object::Return(e) => e.type_info(),
+            Object::Error(_) => format!("ERROR"),
+        }
+    }
+}
