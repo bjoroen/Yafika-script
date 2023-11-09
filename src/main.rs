@@ -1,9 +1,12 @@
+use eval::object::Environment;
 use parser::Parser;
 
 use crate::eval::evaluator;
 use crate::lexer::Lexer;
+use std::cell::RefCell;
 use std::env;
 use std::fs;
+use std::rc::Rc;
 
 mod ast;
 mod eval;
@@ -34,7 +37,8 @@ fn main() {
         pars.read();
         pars.read();
         let program = pars.parse();
-        let evaluation = evaluator::eval(ast::Node::Program(program.clone()));
+        let ev = Rc::new(RefCell::new(Environment::new()));
+        let evaluation = evaluator::eval(ast::Node::Program(program.clone()), &ev);
         match evaluation {
             Ok(v) => println!("{}", v.to_string()),
             Err(e) => println!("{}", e),

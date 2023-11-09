@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 
 pub type EvalError = String;
 
@@ -34,3 +34,25 @@ impl Object {
         }
     }
 }
+
+#[derive(Default, Clone)]
+pub struct Environment {
+    store: HashMap<String, Object>,
+}
+
+impl Environment {
+    pub fn new() -> Self {
+        let mut env: Environment = Default::default();
+        env
+    }
+
+    pub fn get(&self, name: &str) -> Option<Object> {
+        self.store.get(name).cloned()
+    }
+
+    pub fn set(&mut self, name: String, value: Object) {
+        self.store.insert(name, value);
+    }
+}
+
+pub type Env = Rc<RefCell<Environment>>;
