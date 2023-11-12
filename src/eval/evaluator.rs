@@ -51,7 +51,6 @@ fn eval_expression(e: Expression, ev: &Env) -> Result<Object, EvalError> {
         Expression::Boolean(b) => Ok(Object::Boolean(b)),
         Expression::Indentifier(i) => {
             let val = ev.borrow().get(&i);
-            dbg!(&val);
             match val {
                 Some(v) => Ok(v),
                 None => Err(format!("identifier not found: {}", i)),
@@ -82,6 +81,18 @@ fn eval_expression(e: Expression, ev: &Env) -> Result<Object, EvalError> {
             Consequence,
             Alternative,
         } => eval_ifelse_expression(Condition, Consequence, Alternative, ev),
+        Expression::FunctionLiteral {
+            Token: _,
+            Parameters,
+            Body,
+        } => {
+            return Ok(Object::Function {
+                Parameters,
+                Body,
+                env: ev.clone(),
+            })
+        }
+
         _ => todo!(),
     }
 }
@@ -209,8 +220,34 @@ mod tests {
         }
     }
 
+    // TODO: Refactor tests, so they all check againts strings and not objects
+    //
+    fn test_eval_string(test_case: &[(&str, &str)]) {
+        for (input, expected) in test_case {
+            let lexer = lexer::Lexer::new(String::from(*input));
+            let mut parser = Parser::new(lexer);
+            parser.read();
+            parser.read();
+            let program = parser.parse();
+
+            let ev = Rc::new(RefCell::new(Environment::new()));
+
+            match eval(ast::Node::Program(program), &ev) {
+                Ok(v) => p_assert_eq!(v.to_string(), *expected.to_string()),
+                Err(e) => p_assert_eq!(e, *expected.to_string()),
+            }
+        }
+    }
+
     #[test]
-    fn evaluate_let_statments() {
+    fn evaluate_function() {
+        let test_case = [(" fn(x) {x + 2}", "fn(x) { x+2 }")];
+
+        test_eval_string(&test_case)
+    }
+
+    #[test]
+    fn evaluate_let() {
         let test_case = [
             ("let a = 5 a", Object::Integer(5.0)),
             ("let a = 5 * 5 a", Object::Integer(25.0)),
@@ -261,7 +298,7 @@ mod tests {
     }
 
     #[test]
-    fn evaluate_return_statments() {
+    fn evaluate_return() {
         let test_case = [
             (
                 "return 10;",
@@ -294,7 +331,7 @@ mod tests {
     }
 
     #[test]
-    fn evaluate_ifelse_expression() {
+    fn evaluate_ifelse() {
         let test_case = [
             ("if ( True ) { 10 }", Object::Integer(10.00)),
             ("if ( False ) { 10 }", Object::Nil),
@@ -309,7 +346,7 @@ mod tests {
     }
 
     #[test]
-    fn evaluate_prefix_expression() {
+    fn evaluate_prefix() {
         let test_case = [
             ("!True ", Object::Boolean(false)),
             ("!False ", Object::Boolean(true)),
@@ -323,7 +360,7 @@ mod tests {
     }
 
     #[test]
-    fn evaluate_boolean_expression() {
+    fn evaluate_boolean() {
         let test_case = [
             ("True ", Object::Boolean(true)),
             ("False ", Object::Boolean(false)),
@@ -350,7 +387,7 @@ mod tests {
     }
 
     #[test]
-    fn evaluate_int_expression() {
+    fn evaluate_int() {
         let test_case = [
             ("5 ", Object::Integer(5.00)),
             ("231.00", Object::Integer(231.00)),

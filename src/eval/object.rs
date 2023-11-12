@@ -1,13 +1,20 @@
 use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 
+use crate::ast::{BlockStatment, Expression};
+
 pub type EvalError = String;
 
-#[derive(PartialEq, Debug, Clone, PartialOrd)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Object {
     Integer(f64),
     Boolean(bool),
     Nil,
     Return(Box<Object>),
+    Function {
+        Parameters: Option<Vec<Expression>>,
+        Body: BlockStatment,
+        env: Env,
+    },
     Error(String),
 }
 
@@ -19,6 +26,21 @@ impl Display for Object {
             Object::Nil => write!(f, "null"),
             Object::Return(v) => write!(f, "{}", v),
             Object::Error(e) => write!(f, "{}", e),
+            Object::Function {
+                Parameters,
+                Body,
+                env: _,
+            } => {
+                let params = match Parameters {
+                    Some(v) => v
+                        .iter()
+                        .map(|exp| exp.to_string())
+                        .collect::<Vec<String>>()
+                        .join(", "),
+                    None => String::from(""),
+                };
+                write!(f, "fn({}) {{ {} }}", params, Body)
+            }
         }
     }
 }
@@ -31,18 +53,23 @@ impl Object {
             Object::Nil => format!("Nil"),
             Object::Return(e) => e.type_info(),
             Object::Error(_) => format!("ERROR"),
+            Object::Function {
+                Parameters: _,
+                Body: _,
+                env: _,
+            } => format!("FUNCTION"),
         }
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug, PartialEq)]
 pub struct Environment {
     store: HashMap<String, Object>,
 }
 
 impl Environment {
     pub fn new() -> Self {
-        let mut env: Environment = Default::default();
+        let env: Environment = Default::default();
         env
     }
 

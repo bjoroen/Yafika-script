@@ -1,7 +1,9 @@
-let a = 5 let b = a let c = a + b + 5 c
+let a = 5
+let b = a 
+let c = a + b + 5 * 200
 
 if (c < 16) {
-  return 1
+  return c
 } else {
   return 2
 }
