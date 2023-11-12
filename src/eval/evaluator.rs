@@ -240,6 +240,35 @@ mod tests {
     }
 
     #[test]
+    fn evaluate_function_application() {
+        let test_case = [
+            (
+                "let identity = fn(x) {x} identity(5)",
+                Object::Integer(5.00),
+            ),
+            (
+                "let identity = fn(x) {return x} identity(5)",
+                Object::Integer(5.00),
+            ),
+            (
+                "let double = fn(x) { x * 2 } double(5)",
+                Object::Integer(10.00),
+            ),
+            (
+                "let add = fn(x, y) { x + y } add(5, 10)",
+                Object::Integer(15.00),
+            ),
+            (
+                "let add = fn(x, y) { x + y } add(5, 10) add(10, 10)",
+                Object::Integer(35.00),
+            ),
+            ("fn(x) {x}(5)", Object::Integer(5.00)),
+        ];
+
+        test_eval(&test_case)
+    }
+
+    #[test]
     fn evaluate_function() {
         let test_case = [(" fn(x) {x + 2}", "fn(x) { x+2 }")];
 

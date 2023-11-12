@@ -212,7 +212,7 @@ impl Display for Expression {
                 }
             }
             Expression::InfixExpression {
-                Token,
+                Token: _,
                 Left,
                 Op,
                 Right,
