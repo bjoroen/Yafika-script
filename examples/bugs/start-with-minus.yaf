@@ -1,0 +1,4 @@
+-5
+
+// panicked at src/lexer.rs:22:26:
+// index out of bounds: the len is 0 but the index is 0

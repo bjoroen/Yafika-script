@@ -1,4 +1,5 @@
-use eval::object::Environment;
+use eval::environment::Env;
+use eval::environment::Environment;
 use parser::Parser;
 
 use crate::eval::evaluator;
@@ -37,7 +38,7 @@ fn main() {
         pars.read();
         pars.read();
         let program = pars.parse();
-        let ev = Rc::new(RefCell::new(Environment::new()));
+        let ev: Env = Rc::new(RefCell::new(Default::default()));
         let evaluation = evaluator::eval(ast::Node::Program(program.clone()), &ev);
         match evaluation {
             Ok(v) => println!("{}", v.to_string()),

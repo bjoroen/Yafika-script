@@ -240,28 +240,28 @@ impl Parser {
                     Some(Expression::CallExpression {
                         Token: self.current.clone(),
                         Function: Box::new(left),
-                        Arguments: vec![],
+                        Arguments: None,
                     })
                 } else {
-                    let mut args = Vec::<Option<Expression>>::new();
+                    let mut args = Vec::<Expression>::new();
 
                     let expression_token = self.current.clone();
                     self.read();
 
-                    args.push(self.parse_expression(Precedence::Lowest));
+                    args.push(self.parse_expression(Precedence::Lowest).unwrap());
 
                     while self.peek_token_is(TokenType::Comma) {
                         self.read();
                         self.read();
                         if let Some(expr) = self.parse_expression(Precedence::Lowest) {
-                            args.push(Some(expr))
+                            args.push(expr)
                         }
                     }
 
                     Some(Expression::CallExpression {
                         Token: expression_token,
                         Function: Box::new(left),
-                        Arguments: args,
+                        Arguments: Some(args),
                     })
                 }
             }
@@ -355,9 +355,9 @@ mod tests {
                     literal: "(".to_string(),
                 },
                 Function: Box::new(Expression::Indentifier("add".to_string())),
-                Arguments: vec![
-                    Some(Expression::Number(1.00)),
-                    Some(Expression::InfixExpression {
+                Arguments: Some(vec![
+                    Expression::Number(1.00),
+                    Expression::InfixExpression {
                         Token: Token {
                             token_type: TokenType::Star,
                             literal: "*".to_string(),
@@ -365,8 +365,8 @@ mod tests {
                         Left: Box::new(Expression::Number(2.00)),
                         Op: Op::Multiply,
                         Right: Box::new(Some(Expression::Number(3.00))),
-                    }),
-                    Some(Expression::InfixExpression {
+                    },
+                    Expression::InfixExpression {
                         Token: Token {
                             token_type: TokenType::Addition,
                             literal: "+".to_string(),
@@ -374,8 +374,8 @@ mod tests {
                         Left: Box::new(Expression::Number(4.00)),
                         Op: Op::Add,
                         Right: Box::new(Some(Expression::Number(5.00))),
-                    }),
-                ],
+                    },
+                ]),
             },
         }]);
 
@@ -397,7 +397,7 @@ mod tests {
                     literal: "(".to_string(),
                 },
                 Function: Box::new(Expression::Indentifier("add".to_string())),
-                Arguments: vec![],
+                Arguments: None,
             },
         }]);
 

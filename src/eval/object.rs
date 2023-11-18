@@ -1,6 +1,8 @@
-use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
+use std::fmt::Display;
 
 use crate::ast::{BlockStatment, Expression};
+
+use super::environment::Env;
 
 pub type EvalError = String;
 
@@ -61,25 +63,3 @@ impl Object {
         }
     }
 }
-
-#[derive(Default, Clone, Debug, PartialEq)]
-pub struct Environment {
-    store: HashMap<String, Object>,
-}
-
-impl Environment {
-    pub fn new() -> Self {
-        let env: Environment = Default::default();
-        env
-    }
-
-    pub fn get(&self, name: &str) -> Option<Object> {
-        self.store.get(name).cloned()
-    }
-
-    pub fn set(&mut self, name: String, value: Object) {
-        self.store.insert(name, value);
-    }
-}
-
-pub type Env = Rc<RefCell<Environment>>;

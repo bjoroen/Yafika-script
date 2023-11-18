@@ -68,8 +68,7 @@ pub enum Expression {
     CallExpression {
         Token: Token,
         Function: Box<Expression>,
-        //TODO: I dont think a vector of Options is correct or good, maybe a Option Vec instead?
-        Arguments: Vec<Option<Expression>>,
+        Arguments: Option<Vec<Expression>>,
     },
 }
 

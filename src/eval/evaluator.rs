@@ -1,9 +1,17 @@
-use crate::ast::{self, Expression, Node, Op, Statement};
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{
+    ast::{self, Expression, Node, Op, Statement},
+    eval::environment::Environment,
+};
 
 #[cfg(test)]
 use pretty_assertions::assert_eq as p_assert_eq;
 
-use super::object::{self, Env, EvalError, Object};
+use super::{
+    environment::Env,
+    object::{self, EvalError, Object},
+};
 
 pub fn eval(node: Node, ev: &Env) -> Result<Object, EvalError> {
     match node {
@@ -15,7 +23,7 @@ pub fn eval(node: Node, ev: &Env) -> Result<Object, EvalError> {
 }
 
 fn eval_program(p: Vec<Statement>, ev: &Env) -> Result<Object, EvalError> {
-    let mut result: object::Object = object::Object::Nil;
+    let mut result: Object = Object::Nil;
     for statment in p {
         let stmt = eval_statment(statment, ev);
         match stmt {
@@ -32,6 +40,8 @@ fn eval_program(p: Vec<Statement>, ev: &Env) -> Result<Object, EvalError> {
 fn eval_statment(s: Statement, ev: &Env) -> Result<Object, EvalError> {
     match s {
         Statement::Let { name: n, value: v } => {
+            //TODO: Match to check if identifier ??
+
             let exp = eval_expression(v, ev)?;
             let _ = &ev.try_borrow_mut().unwrap().set(n, exp);
 
@@ -39,7 +49,7 @@ fn eval_statment(s: Statement, ev: &Env) -> Result<Object, EvalError> {
         }
         Statement::Return { value: v } => {
             let value = eval_expression(v, ev)?;
-            return Ok(object::Object::Return(Box::new(value)));
+            return Ok(Object::Return(Box::new(value)));
         }
         Statement::StatmentExpression { value } => eval_expression(value, ev),
     }
@@ -92,8 +102,60 @@ fn eval_expression(e: Expression, ev: &Env) -> Result<Object, EvalError> {
                 env: ev.clone(),
             })
         }
+        Expression::CallExpression {
+            Token: _,
+            Function,
+            Arguments,
+        } => {
+            let func = eval_expression(*Function, ev)?;
+
+            let mut args = vec![];
+            if let Some(expr) = Arguments {
+                for exp in expr {
+                    args.push(eval_expression(exp, ev)?)
+                }
+            }
+
+            let mut enclosed_env = Environment::new_enclosed_environment(ev);
+
+            match func {
+                Object::Function {
+                    Parameters,
+                    Body,
+                    env,
+                } => {
+                    if let Some(param) = Parameters {
+                        param
+                            .iter()
+                            .enumerate()
+                            .for_each(|(indx, param)| match param {
+                                Expression::Indentifier(n) => {
+                                    enclosed_env.set(n.clone(), args[indx].clone())
+                                }
+                                _ => todo!("Not sure what to do here yet?"),
+                            });
+                    }
+
+                    let evaluated = eval(
+                        Node::BlockStatment(Body),
+                        &Rc::new(RefCell::new(enclosed_env)),
+                    )?;
+
+                    return unwrap_return_value(evaluated);
+                }
+                _ => Err(format!("Expected function")),
+            }
+        }
 
         _ => todo!(),
+    }
+}
+
+fn unwrap_return_value(obj: Object) -> Result<Object, EvalError> {
+    if let Object::Return(v) = obj {
+        Ok(Object::Return(v))
+    } else {
+        Ok(obj)
     }
 }
 
@@ -116,26 +178,18 @@ fn eval_ifelse_expression(
     }
 }
 
-fn is_truthy(obj: object::Object) -> bool {
+fn is_truthy(obj: Object) -> bool {
     match obj {
-        object::Object::Nil => return false,
-        object::Object::Boolean(false) => return false,
+        Object::Nil => return false,
+        Object::Boolean(false) => return false,
         _ => true,
     }
 }
 
-fn eval_infix_expression(
-    left: object::Object,
-    op: ast::Op,
-    right: object::Object,
-) -> Result<Object, EvalError> {
+fn eval_infix_expression(left: Object, op: ast::Op, right: Object) -> Result<Object, EvalError> {
     match (&left, &right) {
-        (object::Object::Integer(ln), object::Object::Integer(rn)) => {
-            eval_int_infix_expression(ln, op, rn)
-        }
-        (object::Object::Boolean(lb), object::Object::Boolean(rb)) => {
-            eval_bool_infix_expression(lb, op, rb)
-        }
+        (Object::Integer(ln), Object::Integer(rn)) => eval_int_infix_expression(ln, op, rn),
+        (Object::Boolean(lb), Object::Boolean(rb)) => eval_bool_infix_expression(lb, op, rb),
         _ => Err(format!(
             "type mismatch: {} {} {}",
             left.type_info(),
@@ -168,7 +222,7 @@ fn eval_int_infix_expression(ln: &f64, op: ast::Op, rn: &f64) -> Result<Object, 
     }
 }
 
-fn eval_prefix(op: ast::Op, right: object::Object) -> Result<object::Object, EvalError> {
+fn eval_prefix(op: ast::Op, right: Object) -> Result<Object, EvalError> {
     match op {
         ast::Op::Bang => eval_bang_prefix(right),
         ast::Op::Subtract => eval_sub_prefix(right),
@@ -178,7 +232,7 @@ fn eval_prefix(op: ast::Op, right: object::Object) -> Result<object::Object, Eva
 
 fn eval_sub_prefix(right: Object) -> Result<Object, EvalError> {
     match right {
-        object::Object::Integer(i) => Ok(Object::Integer(-i)),
+        Object::Integer(i) => Ok(Object::Integer(-i)),
         _ => Err(format!("unknown operator: -{}", right)),
     }
 }
@@ -196,10 +250,7 @@ mod tests {
 
     use std::{cell::RefCell, rc::Rc};
 
-    use crate::{
-        eval::object::{Environment, Object},
-        lexer, Parser,
-    };
+    use crate::{eval::object::Object, lexer, Parser};
 
     use super::*;
 
@@ -211,7 +262,7 @@ mod tests {
             parser.read();
             let program = parser.parse();
 
-            let ev = Rc::new(RefCell::new(Environment::new()));
+            let ev: Env = Rc::new(RefCell::new(Default::default()));
 
             match eval(ast::Node::Program(program), &ev) {
                 Ok(v) => p_assert_eq!(v, *expected),
@@ -230,7 +281,7 @@ mod tests {
             parser.read();
             let program = parser.parse();
 
-            let ev = Rc::new(RefCell::new(Environment::new()));
+            let ev: Env = Rc::new(RefCell::new(Default::default()));
 
             match eval(ast::Node::Program(program), &ev) {
                 Ok(v) => p_assert_eq!(v.to_string(), *expected.to_string()),
@@ -242,30 +293,15 @@ mod tests {
     #[test]
     fn evaluate_function_application() {
         let test_case = [
-            (
-                "let identity = fn(x) {x} identity(5)",
-                Object::Integer(5.00),
-            ),
-            (
-                "let identity = fn(x) {return x} identity(5)",
-                Object::Integer(5.00),
-            ),
-            (
-                "let double = fn(x) { x * 2 } double(5)",
-                Object::Integer(10.00),
-            ),
-            (
-                "let add = fn(x, y) { x + y } add(5, 10)",
-                Object::Integer(15.00),
-            ),
-            (
-                "let add = fn(x, y) { x + y } add(5, 10) add(10, 10)",
-                Object::Integer(35.00),
-            ),
-            ("fn(x) {x}(5)", Object::Integer(5.00)),
+            ("let identity = fn(x) {x} identity(1)", "1"),
+            ("let identity = fn(x) {return x} identity(2)", "2"),
+            ("let double = fn(x) { x * 2 } double(5)", "10"),
+            ("let add = fn(x, y) { x + y } add(5, 10)", "15"),
+            ("let add = fn(x, y) { x + y } add(5 + 5, add(5, 5))", "20"),
+            ("fn(x) {x}(5)", "5"),
         ];
 
-        test_eval(&test_case)
+        test_eval_string(&test_case)
     }
 
     #[test]
