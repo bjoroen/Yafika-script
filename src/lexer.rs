@@ -80,8 +80,8 @@ impl Lexer {
                     self.read();
                 }
                 let token_type: TokenType = match buffer.as_str() {
-                    "<" => TokenType::Greater,
-                    "<=" => TokenType::GreaterEqual,
+                    "<" => TokenType::Less,
+                    "<=" => TokenType::LessEqual,
                     _ => unimplemented!(),
                 };
 
@@ -97,8 +97,8 @@ impl Lexer {
                     self.read();
                 }
                 let token_type: TokenType = match buffer.as_str() {
-                    ">" => TokenType::Less,
-                    ">=" => TokenType::LessEqual,
+                    ">" => TokenType::Greater,
+                    ">=" => TokenType::GreaterEqual,
                     _ => unimplemented!(),
                 };
 
@@ -344,11 +344,11 @@ mod tests {
         );
         assert_eq!(
             array_of_tokens[24],
-            Token::new(TokenType::LessEqual, ">=".to_string())
+            Token::new(TokenType::GreaterEqual, ">=".to_string())
         );
         assert_eq!(
             array_of_tokens[25],
-            Token::new(TokenType::GreaterEqual, "<=".to_string())
+            Token::new(TokenType::LessEqual, "<=".to_string())
         );
         assert_eq!(
             array_of_tokens[26],

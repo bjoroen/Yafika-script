@@ -161,6 +161,7 @@ impl Parser {
         if !self.expect_n_peek(TokenType::LeftParen) {
             panic!("Syntax error")
         }
+
         self.read();
 
         let condition = self.parse_expression(Precedence::Lowest);
@@ -257,6 +258,7 @@ impl Parser {
                             args.push(expr)
                         }
                     }
+                    self.read();
 
                     Some(Expression::CallExpression {
                         Token: expression_token,
@@ -503,11 +505,11 @@ mod tests {
                 },
                 Condition: Box::new(Expression::InfixExpression {
                     Token: Token {
-                        token_type: TokenType::Less,
+                        token_type: TokenType::Greater,
                         literal: ">".to_string(),
                     },
                     Left: Box::new(Expression::Number(2.0)),
-                    Op: Op::LessThan,
+                    Op: Op::GreaterThan,
                     Right: Box::new(Some(Expression::Number(5.0))),
                 }),
                 Consequence: BlockStatment {

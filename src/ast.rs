@@ -104,7 +104,6 @@ pub enum Op {
     Subtract,
     Multiply,
     Divide,
-    // Modulo,
     Bang,
     Equals,
     NotEquals,
@@ -113,11 +112,6 @@ pub enum Op {
     GreaterThan,
     LessThanOrEquals,
     GreaterThanOrEquals,
-    // And,
-    // Or,
-    // Pow,
-    // In,
-    // NotIn,
     Call,
 }
 

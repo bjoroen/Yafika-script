@@ -2,4 +2,14 @@ let add = fn(x,y) {
   return x + y
 }
 
-let x = add(4,4)
+let multi = fn(x,y) {
+  return x * y
+}
+
+let value = add(2,2)
+
+if (multi(add(3,1), 10) > 30) {
+  return 4
+} else {
+  return 5
+}
