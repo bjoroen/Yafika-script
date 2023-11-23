@@ -1,5 +1,4 @@
 use eval::environment::Env;
-use eval::environment::Environment;
 use parser::Parser;
 
 use crate::eval::evaluator;
@@ -45,16 +44,5 @@ fn main() {
             Err(e) => println!("{}", e),
         }
         // println!("{}", evaluation.to_string())
-    }
-
-    if env::args().len() == 1 {
-        let prompt = ">>";
-        let mut line = String::new();
-        let b1 = std::io::stdin().read_line(&mut line).unwrap();
-        let mut lex = Lexer::new(line);
-
-        while let Some(token) = lex.next() {
-            println!("{:?}", token)
-        }
     }
 }

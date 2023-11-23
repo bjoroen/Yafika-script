@@ -7,6 +7,7 @@ use super::environment::Env;
 pub type EvalError = String;
 
 #[derive(PartialEq, Debug, Clone)]
+#[allow(non_snake_case, dead_code)]
 pub enum Object {
     Integer(f64),
     Boolean(bool),

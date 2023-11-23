@@ -1,5 +1,5 @@
-let add = fn(x, y) { 
-  x + y 
+let add = fn(x,y) {
+  return x + y
 }
 
-add(10, 5)
+let x = add(4,4)

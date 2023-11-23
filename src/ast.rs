@@ -2,6 +2,7 @@ use crate::token::{Token, TokenType};
 use std::fmt::Display;
 
 #[derive(PartialEq, Debug)]
+#[allow(dead_code)]
 pub enum Node {
     Program(Program),
     Statment(Statement),

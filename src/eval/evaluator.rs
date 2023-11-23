@@ -10,7 +10,7 @@ use pretty_assertions::assert_eq as p_assert_eq;
 
 use super::{
     environment::Env,
-    object::{self, EvalError, Object},
+    object::{EvalError, Object},
 };
 
 pub fn eval(node: Node, ev: &Env) -> Result<Object, EvalError> {
@@ -122,7 +122,7 @@ fn eval_expression(e: Expression, ev: &Env) -> Result<Object, EvalError> {
                 Object::Function {
                     Parameters,
                     Body,
-                    env,
+                    env: _,
                 } => {
                     if let Some(param) = Parameters {
                         param
