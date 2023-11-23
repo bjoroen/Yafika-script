@@ -284,6 +284,22 @@ mod tests {
     }
 
     #[test]
+    fn evaluate_builtin_functions() {
+        let test_case = [
+            ("len(\"\")", "0"),
+            ("len(\"four\")", "4"),
+            ("len(\"hello world\")", "11"),
+            ("len(1)", "argument to 'len' not supported, got INT"),
+            (
+                "len(\"one\", \"two\")",
+                "wrong number of arguments. got=2, want=1",
+            ),
+        ];
+
+        test_eval_string(&test_case)
+    }
+
+    #[test]
     fn evaluate_string_concatenation() {
         let test_case = [("\"hello\" + \" \" + \"world\"", "hello world")];
 
