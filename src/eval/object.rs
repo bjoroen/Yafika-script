@@ -5,6 +5,7 @@ use crate::ast::{BlockStatment, Expression};
 use super::environment::Env;
 
 pub type EvalError = String;
+pub type BuiltinFunc = fn(Vec<Object>) -> Object;
 
 #[derive(PartialEq, Debug, Clone)]
 #[allow(non_snake_case, dead_code)]
@@ -19,6 +20,7 @@ pub enum Object {
         Body: BlockStatment,
         env: Env,
     },
+    Builtin(BuiltinFunc),
     Error(String),
 }
 
@@ -46,6 +48,7 @@ impl Display for Object {
                 };
                 write!(f, "fn({}) {{ {} }}", params, Body)
             }
+            Object::Builtin(_) => write!(f, "[BUILTIN FUNCTION]")
         }
     }
 }
@@ -64,6 +67,7 @@ impl Object {
                 Body: _,
                 env: _,
             } => format!("FUNCTION"),
+            Object::Builtin(_) => format!("FUNCTION")
         }
     }
 }
