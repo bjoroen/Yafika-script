@@ -147,8 +147,6 @@ fn eval_expression(e: Expression, ev: &Env) -> Result<Object, EvalError> {
                 _ => Err(format!("Expected function")),
             }
         }
-
-        _ => todo!(),
     }
 }
 
@@ -191,11 +189,24 @@ fn eval_infix_expression(left: Object, op: ast::Op, right: Object) -> Result<Obj
     match (&left, &right) {
         (Object::Integer(ln), Object::Integer(rn)) => eval_int_infix_expression(ln, op, rn),
         (Object::Boolean(lb), Object::Boolean(rb)) => eval_bool_infix_expression(lb, op, rb),
+        (Object::String(ls), Object::String(rs)) => eval_string_infix_expression(ls, op, rs),
         _ => Err(format!(
             "type mismatch: {} {} {}",
             left.type_info(),
             op,
             right.type_info()
+        )),
+    }
+}
+
+fn eval_string_infix_expression(ls: &str, op: Op, rs: &str) -> Result<Object, EvalError> {
+    match op {
+        Op::Add => Ok(Object::String(String::from(ls.to_owned() + rs))),
+        _ => Err(format!(
+            "unknown operator: {} {} {}",
+            String::from("STRING"),
+            op,
+            String::from("STRING")
         )),
     }
 }
@@ -273,6 +284,13 @@ mod tests {
     }
 
     #[test]
+    fn evaluate_string_concatenation() {
+        let test_case = [("\"hello\" + \" \" + \"world\"", "hello world")];
+
+        test_eval_string(&test_case)
+    }
+
+    #[test]
     fn evaluate_function_application() {
         let test_case = [
             ("let identity = fn(x) {x} identity(1)", "1"),
@@ -313,6 +331,10 @@ mod tests {
             ("-True", "unknown operator: -true"),
             ("True + False", "unknown operator: true + false"),
             ("5 True + False 5", "unknown operator: true + false"),
+            (
+                "\"hello\" - \" \" - \"world\"",
+                "unknown operator: STRING - STRING",
+            ),
             (
                 "if (10 > 5) { True + False }",
                 "unknown operator: true + false",
