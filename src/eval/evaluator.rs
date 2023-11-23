@@ -58,6 +58,7 @@ fn eval_statment(s: Statement, ev: &Env) -> Result<Object, EvalError> {
 fn eval_expression(e: Expression, ev: &Env) -> Result<Object, EvalError> {
     match e {
         Expression::Number(n) => Ok(Object::Integer(n)),
+        Expression::String(s) => Ok(Object::String(s)),
         Expression::Boolean(b) => Ok(Object::Boolean(b)),
         Expression::Indentifier(i) => {
             let val = ev.borrow().get(&i);
