@@ -1,3 +1,8 @@
-let x = "hello world"
+let hello = "hello"
+let world = "world"
 
-x
+if (True) {
+  hello
+} else {
+  world
+}

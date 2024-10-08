@@ -48,7 +48,7 @@ impl Display for Object {
                 };
                 write!(f, "fn({}) {{ {} }}", params, Body)
             }
-            Object::Builtin(_) => write!(f, "[BUILTIN FUNCTION]")
+            Object::Builtin(_) => write!(f, "[BUILTIN FUNCTION]"),
         }
     }
 }
@@ -67,7 +67,7 @@ impl Object {
                 Body: _,
                 env: _,
             } => format!("FUNCTION"),
-            Object::Builtin(_) => format!("FUNCTION")
+            Object::Builtin(_) => format!("FUNCTION"),
         }
     }
 }
