@@ -28,7 +28,7 @@ fn main() {
         let source_code = if maybe_source_code.is_ok() {
             maybe_source_code
         } else {
-            panic!("File is empty? why would you give me an empty file")
+            panic!("File is empty?? why would you give me an empty file")
         };
 
         let lexer = Lexer::new(source_code.unwrap());
